@@ -115,6 +115,32 @@ function Alunos() {
 
       <div className="overflow-hidden rounded-lg border bg-card">
         <table className="w-full text-sm">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Buscar por nome…"
+            value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} />
+        </div>
+        <Select value={faixaF} onValueChange={(v) => { setFaixaF(v); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Faixa" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as faixas</SelectItem>
+            {faixasDisponiveis.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={statusF} onValueChange={(v) => { setStatusF(v as typeof statusF); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="ok">Em dia</SelectItem>
+            <SelectItem value="atrasado">Atrasados</SelectItem>
+            <SelectItem value="neutro">Sem dados</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Status</th>
@@ -130,10 +156,10 @@ function Alunos() {
             {isLoading && (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>
             )}
-            {!isLoading && filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum aluno cadastrado.</td></tr>
+            {!isLoading && pag.pageItems.length === 0 && (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum aluno encontrado.</td></tr>
             )}
-            {filtered.map((a) => (
+            {pag.pageItems.map((a) => (
               <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-4 py-3"><StatusDot status={a.status_pagamento} /></td>
                 <td className="px-4 py-3 font-medium">{a.nome}</td>
@@ -164,6 +190,12 @@ function Alunos() {
             ))}
           </tbody>
         </table>
+        <PaginationBar
+          page={pag.page} totalPages={pag.totalPages} total={pag.total}
+          from={pag.from} to={pag.to} pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
       </div>
 
       <AlunoFormDialog
