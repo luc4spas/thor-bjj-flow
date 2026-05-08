@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PaginationBar, usePagination } from "@/components/pagination-bar";
-import { fmtBRL as _fmt } from "@/lib/format";
 import { Search, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/financeiro")({
