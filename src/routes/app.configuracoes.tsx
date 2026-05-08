@@ -44,6 +44,14 @@ function Config() {
   const [editDur, setEditDur] = useState("1");
   const [editValor, setEditValor] = useState("");
   const [delPlano, setDelPlano] = useState<Plano | null>(null);
+  const [busca, setBusca] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const planosFiltrados = (planos ?? []).filter((p) =>
+    !busca || p.nome.toLowerCase().includes(busca.toLowerCase()),
+  );
+  const pag = usePagination(planosFiltrados, page, pageSize);
 
   async function addPlano() {
     if (!nome || !valor) return toast.error("Preencha nome e valor");
