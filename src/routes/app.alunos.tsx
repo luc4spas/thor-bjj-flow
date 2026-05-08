@@ -67,12 +67,16 @@ function Alunos() {
 
   async function handleDelete() {
     if (!deleting) return;
+    // Limpar dependências (não há FK cascade)
+    await supabase.from("transacoes").delete().eq("id_aluno", deleting.id);
+    await supabase.from("contratos").delete().eq("id_aluno", deleting.id);
     const { error } = await supabase.from("alunos").delete().eq("id", deleting.id);
     if (error) toast.error(error.message);
     else {
       toast.success("Aluno removido");
       qc.invalidateQueries({ queryKey: ["alunos-list"] });
       qc.invalidateQueries({ queryKey: ["transacoes"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-financeiro"] });
     }
     setDeleting(null);
   }
