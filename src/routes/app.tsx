@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { to: "/app/alunos", label: "Alunos", icon: Users, roles: ["owner", "admin", "instructor"] },
   { to: "/app/financeiro", label: "Financeiro", icon: Wallet, roles: ["owner", "admin"] },
   { to: "/app/relatorios", label: "Relatórios", icon: BarChart3, roles: ["owner", "admin"] },
+  { to: "/app/usuarios", label: "Usuários", icon: ShieldCheck, roles: ["owner", "admin"] },
   { to: "/app/configuracoes", label: "Configurações", icon: Settings, roles: ["owner", "admin"] },
 ];
 
