@@ -69,6 +69,20 @@ function UsuariosPage() {
 
   const [delPerfil, setDelPerfil] = useState<Perfil | null>(null);
   const [busyDel, setBusyDel] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [roleF, setRoleF] = useState<"todos" | AppRole>("todos");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const filtered = (perfis ?? []).filter((p) => {
+    if (roleF !== "todos" && p.role !== roleF) return false;
+    if (busca) {
+      const q = busca.toLowerCase();
+      if (!`${p.nome ?? ""} ${p.email ?? ""}`.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  const pag = usePagination(filtered, page, pageSize);
 
   async function confirmDelete() {
     if (!delPerfil) return;
