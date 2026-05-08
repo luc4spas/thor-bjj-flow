@@ -18,7 +18,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, ShieldCheck } from "lucide-react";
+import { UserPlus, ShieldCheck, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/app/usuarios")({
   component: () => (
@@ -64,6 +65,25 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [delPerfil, setDelPerfil] = useState<Perfil | null>(null);
+  const [busyDel, setBusyDel] = useState(false);
+
+  async function confirmDelete() {
+    if (!delPerfil) return;
+    setBusyDel(true);
+    const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+      body: { id: delPerfil.id },
+    });
+    setBusyDel(false);
+    if (error || (data as { error?: string })?.error) {
+      toast.error((data as { error?: string })?.error ?? error?.message ?? "Falha ao excluir");
+      return;
+    }
+    toast.success("Usuário excluído");
+    qc.invalidateQueries({ queryKey: ["perfis"] });
+    setDelPerfil(null);
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -105,23 +125,30 @@ function UsuariosPage() {
                     <RoleBadge role={p.role} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {canEdit ? (
-                      <Select
-                        defaultValue={p.role}
-                        onValueChange={(v) => updateRole.mutate({ id: p.id, role: v as AppRole })}
-                      >
-                        <SelectTrigger className="w-[160px] ml-auto">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {myRole === "owner" && <SelectItem value="owner">Owner</SelectItem>}
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="instructor">Instrutor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">{isSelf ? "Você" : "—"}</span>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {canEdit ? (
+                        <Select
+                          defaultValue={p.role}
+                          onValueChange={(v) => updateRole.mutate({ id: p.id, role: v as AppRole })}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {myRole === "owner" && <SelectItem value="owner">Owner</SelectItem>}
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="instructor">Instrutor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{isSelf ? "Você" : "—"}</span>
+                      )}
+                      {canEdit && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDelPerfil(p)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -129,6 +156,15 @@ function UsuariosPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!delPerfil}
+        onOpenChange={(v) => { if (!v && !busyDel) setDelPerfil(null); }}
+        title="Excluir usuário"
+        description={`Excluir "${delPerfil?.nome ?? delPerfil?.email}"? Essa ação remove o acesso ao sistema.`}
+        confirmLabel={busyDel ? "Excluindo…" : "Excluir"}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

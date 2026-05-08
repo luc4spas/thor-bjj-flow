@@ -11,13 +11,26 @@ import { useQuery } from "@tanstack/react-query";
 
 const FAIXAS = ["Branca", "Cinza", "Amarela", "Laranja", "Verde", "Azul", "Roxa", "Marrom", "Preta"];
 
+export interface AlunoEditPayload {
+  id: string;
+  nome: string;
+  data_nascimento: string | null;
+  faixa: string;
+  graus: number;
+  telefone: string | null;
+  email: string | null;
+  id_responsavel: string | null;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSaved: () => void;
+  aluno?: AlunoEditPayload | null;
 }
 
-export function AlunoFormDialog({ open, onOpenChange, onSaved }: Props) {
+export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
+  const isEdit = !!aluno;
   const [tab, setTab] = useState("dados");
   const [busy, setBusy] = useState(false);
 
@@ -33,7 +46,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved }: Props) {
   const [respCpf, setRespCpf] = useState("");
   const [respTel, setRespTel] = useState("");
   const [respEmail, setRespEmail] = useState("");
-  // Contrato
+  // Contrato (só na criação)
   const [planoId, setPlanoId] = useState("");
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
   const [valorTotal, setValorTotal] = useState("");
@@ -49,75 +62,119 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved }: Props) {
   });
 
   useEffect(() => {
-    if (!open) {
-      setTab("dados"); setNome(""); setDataNasc(""); setFaixa("Branca"); setGraus("0");
+    if (!open) return;
+    setTab("dados");
+    if (aluno) {
+      setNome(aluno.nome);
+      setDataNasc(aluno.data_nascimento ?? "");
+      setFaixa(aluno.faixa);
+      setGraus(String(aluno.graus));
+      setTelefone(aluno.telefone ?? "");
+      setEmail(aluno.email ?? "");
+      // Carregar responsável se houver
+      if (aluno.id_responsavel) {
+        supabase.from("responsaveis").select("*").eq("id", aluno.id_responsavel).maybeSingle()
+          .then(({ data }) => {
+            if (data) {
+              setRespNome(data.nome ?? "");
+              setRespCpf(data.cpf ?? "");
+              setRespTel(data.telefone ?? "");
+              setRespEmail(data.email ?? "");
+            }
+          });
+      } else {
+        setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
+      }
+    } else {
+      setNome(""); setDataNasc(""); setFaixa("Branca"); setGraus("0");
       setTelefone(""); setEmail(""); setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
-      setPlanoId(""); setValorTotal(""); setDiaVenc("10"); setDataInicio(new Date().toISOString().slice(0, 10));
+      setPlanoId(""); setValorTotal(""); setDiaVenc("10");
+      setDataInicio(new Date().toISOString().slice(0, 10));
     }
-  }, [open]);
+  }, [open, aluno]);
 
   useEffect(() => {
-    if (planoId && planos) {
+    if (planoId && planos && !isEdit) {
       const p = planos.find((x) => x.id === planoId);
       if (p && !valorTotal) setValorTotal(String(p.valor_padrao));
     }
-  }, [planoId, planos]);
+  }, [planoId, planos, isEdit, valorTotal]);
 
   async function salvar() {
     if (!nome.trim()) return toast.error("Informe o nome do aluno");
-    if (!planoId) return toast.error("Selecione um plano (contrato é obrigatório)");
-    if (!valorTotal) return toast.error("Informe o valor total do contrato");
+    if (!isEdit) {
+      if (!planoId) return toast.error("Selecione um plano (contrato é obrigatório)");
+      if (!valorTotal) return toast.error("Informe o valor total do contrato");
+    }
 
     setBusy(true);
     try {
-      let idResponsavel: string | null = null;
+      let idResponsavel: string | null = aluno?.id_responsavel ?? null;
       if (respNome.trim()) {
-        const { data: r, error: er } = await supabase.from("responsaveis").insert({
-          nome: respNome, cpf: respCpf || null, telefone: respTel || null, email: respEmail || null,
-        }).select("id").single();
-        if (er) throw er;
-        idResponsavel = r.id;
+        if (idResponsavel) {
+          const { error } = await supabase.from("responsaveis").update({
+            nome: respNome, cpf: respCpf || null, telefone: respTel || null, email: respEmail || null,
+          }).eq("id", idResponsavel);
+          if (error) throw error;
+        } else {
+          const { data: r, error: er } = await supabase.from("responsaveis").insert({
+            nome: respNome, cpf: respCpf || null, telefone: respTel || null, email: respEmail || null,
+          }).select("id").single();
+          if (er) throw er;
+          idResponsavel = r.id;
+        }
       }
 
-      const { data: aluno, error: ea } = await supabase.from("alunos").insert({
-        nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
-        telefone: telefone || null, email: email || null, id_responsavel: idResponsavel,
-      }).select("id").single();
-      if (ea) throw ea;
+      if (isEdit) {
+        const { error } = await supabase.from("alunos").update({
+          nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
+          telefone: telefone || null, email: email || null, id_responsavel: idResponsavel,
+        }).eq("id", aluno!.id);
+        if (error) throw error;
+        toast.success("Aluno atualizado");
+      } else {
+        const { data: alunoNovo, error: ea } = await supabase.from("alunos").insert({
+          nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
+          telefone: telefone || null, email: email || null, id_responsavel: idResponsavel,
+        }).select("id").single();
+        if (ea) throw ea;
 
-      const plano = planos?.find((p) => p.id === planoId)!;
-      const inicio = new Date(dataInicio + "T00:00:00");
-      const fim = new Date(inicio); fim.setMonth(fim.getMonth() + plano.duracao_meses);
+        const plano = planos?.find((p) => p.id === planoId)!;
+        const inicio = new Date(dataInicio + "T00:00:00");
+        const fim = new Date(inicio); fim.setMonth(fim.getMonth() + plano.duracao_meses);
 
-      const { error: ec } = await supabase.from("contratos").insert({
-        id_aluno: aluno.id,
-        id_plano: planoId,
-        data_inicio: dataInicio,
-        data_fim: fim.toISOString().slice(0, 10),
-        valor_total: Number(valorTotal),
-        dia_vencimento: Number(diaVenc),
-        status: "ativo",
-      });
-      if (ec) throw ec;
+        const { error: ec } = await supabase.from("contratos").insert({
+          id_aluno: alunoNovo.id,
+          id_plano: planoId,
+          data_inicio: dataInicio,
+          data_fim: fim.toISOString().slice(0, 10),
+          valor_total: Number(valorTotal),
+          dia_vencimento: Number(diaVenc),
+          status: "ativo",
+        });
+        if (ec) throw ec;
+        toast.success("Aluno cadastrado e parcelas geradas!");
+      }
 
-      toast.success("Aluno cadastrado e parcelas geradas!");
       onSaved();
       onOpenChange(false);
-    } catch (e: any) {
-      toast.error(e.message ?? "Erro ao cadastrar");
+    } catch (e: unknown) {
+      toast.error((e as Error).message ?? "Erro ao salvar");
     } finally { setBusy(false); }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>Novo Aluno</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Editar Aluno" : "Novo Aluno"}</DialogTitle>
+        </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={isEdit ? "grid w-full grid-cols-2" : "grid w-full grid-cols-3"}>
             <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
             <TabsTrigger value="resp">Responsável</TabsTrigger>
-            <TabsTrigger value="contrato">Contrato *</TabsTrigger>
+            {!isEdit && <TabsTrigger value="contrato">Contrato *</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="dados" className="space-y-4 pt-4">
@@ -148,31 +205,33 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved }: Props) {
             <Field label="E-mail"><Input value={respEmail} onChange={(e) => setRespEmail(e.target.value)} /></Field>
           </TabsContent>
 
-          <TabsContent value="contrato" className="space-y-4 pt-4">
-            <Field label="Plano *">
-              <Select value={planoId} onValueChange={setPlanoId}>
-                <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
-                <SelectContent>
-                  {planos?.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nome} — {p.duracao_meses}m — R$ {Number(p.valor_padrao).toFixed(2)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Data Início"><Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></Field>
-              <Field label="Valor Total *"><Input type="number" step="0.01" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} /></Field>
-              <Field label="Dia Vencimento"><Input type="number" min={1} max={28} value={diaVenc} onChange={(e) => setDiaVenc(e.target.value)} /></Field>
-            </div>
-            <p className="text-xs text-muted-foreground">As parcelas mensais serão geradas automaticamente conforme a duração do plano.</p>
-          </TabsContent>
+          {!isEdit && (
+            <TabsContent value="contrato" className="space-y-4 pt-4">
+              <Field label="Plano *">
+                <Select value={planoId} onValueChange={setPlanoId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
+                  <SelectContent>
+                    {planos?.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nome} — {p.duracao_meses}m — R$ {Number(p.valor_padrao).toFixed(2)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Data Início"><Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></Field>
+                <Field label="Valor Total *"><Input type="number" step="0.01" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} /></Field>
+                <Field label="Dia Vencimento"><Input type="number" min={1} max={28} value={diaVenc} onChange={(e) => setDiaVenc(e.target.value)} /></Field>
+              </div>
+              <p className="text-xs text-muted-foreground">As parcelas mensais serão geradas automaticamente conforme a duração do plano.</p>
+            </TabsContent>
+          )}
         </Tabs>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={salvar} disabled={busy}>{busy ? "Salvando…" : "Salvar Aluno"}</Button>
+          <Button onClick={salvar} disabled={busy}>{busy ? "Salvando…" : isEdit ? "Salvar Alterações" : "Salvar Aluno"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
