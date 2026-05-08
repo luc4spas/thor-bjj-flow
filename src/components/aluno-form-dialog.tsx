@@ -97,7 +97,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       }
     } else {
       setNome(""); setDataNasc(""); setFaixa("Branca"); setGraus("0");
-      setTelefone(""); setEmail(""); setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
+      setTelefone(""); setEmail(""); setCpf(""); setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
       setPlanoId(""); setValorTotal(""); setDiaVenc("10");
       setDataInicio(new Date().toISOString().slice(0, 10));
     }
