@@ -13,6 +13,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
+import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
+import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
+import { Route as AppAlunosRouteImport } from './routes/app.alunos'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,16 +39,51 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAlunosRoute = AppAlunosRouteImport.update({
+  id: '/alunos',
+  path: '/alunos',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/alunos': typeof AppAlunosRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/alunos': typeof AppAlunosRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -51,14 +91,46 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/alunos': typeof AppAlunosRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/login' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/app/alunos'
+    | '/app/configuracoes'
+    | '/app/dashboard'
+    | '/app/financeiro'
+    | '/app/relatorios'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/app'
-  id: '__root__' | '/' | '/app' | '/login' | '/app/'
+  to:
+    | '/'
+    | '/login'
+    | '/app/alunos'
+    | '/app/configuracoes'
+    | '/app/dashboard'
+    | '/app/financeiro'
+    | '/app/relatorios'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/login'
+    | '/app/alunos'
+    | '/app/configuracoes'
+    | '/app/dashboard'
+    | '/app/financeiro'
+    | '/app/relatorios'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,14 +169,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/relatorios': {
+      id: '/app/relatorios'
+      path: '/relatorios'
+      fullPath: '/app/relatorios'
+      preLoaderRoute: typeof AppRelatoriosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/financeiro': {
+      id: '/app/financeiro'
+      path: '/financeiro'
+      fullPath: '/app/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/dashboard': {
+      id: '/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/configuracoes': {
+      id: '/app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AppConfiguracoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/alunos': {
+      id: '/app/alunos'
+      path: '/alunos'
+      fullPath: '/app/alunos'
+      preLoaderRoute: typeof AppAlunosRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAlunosRoute: typeof AppAlunosRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppFinanceiroRoute: typeof AppFinanceiroRoute
+  AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAlunosRoute: AppAlunosRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppFinanceiroRoute: AppFinanceiroRoute,
+  AppRelatoriosRoute: AppRelatoriosRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
