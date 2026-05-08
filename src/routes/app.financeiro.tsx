@@ -69,6 +69,16 @@ function Financeiro() {
   const [deleting, setDeleting] = useState<TransacaoRow | null>(null);
   const [paying, setPaying] = useState<TransacaoRow | null>(null);
 
+  // filtros
+  const [busca, setBusca] = useState("");
+  const [statusF, setStatusF] = useState<"todos" | "pendente" | "pago" | "atrasado">("todos");
+  const [formaF, setFormaF] = useState<"todas" | FormaPagamento>("todas");
+  const [categoriaF, setCategoriaF] = useState<string>("todas");
+  const [dtIni, setDtIni] = useState("");
+  const [dtFim, setDtFim] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   const { data, isLoading } = useQuery({
     queryKey: ["transacoes"],
     queryFn: async () => {
@@ -81,8 +91,49 @@ function Financeiro() {
     },
   });
 
-  const list = (data ?? []).filter((t) => t.tipo === tab);
   const today = new Date().toISOString().slice(0, 10);
+
+  const filtered = (data ?? []).filter((t) => {
+    if (t.tipo !== tab) return false;
+    if (busca) {
+      const q = busca.toLowerCase();
+      const hay = `${t.descricao ?? ""} ${t.categoria} ${t.alunos?.nome ?? ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (statusF !== "todos") {
+      const atrasado = t.status === "pendente" && t.data_vencimento < today;
+      if (statusF === "atrasado" && !atrasado) return false;
+      if (statusF === "pendente" && (t.status !== "pendente" || atrasado)) return false;
+      if (statusF === "pago" && t.status !== "pago") return false;
+    }
+    if (formaF !== "todas" && t.forma_pagamento !== formaF) return false;
+    if (categoriaF !== "todas" && t.categoria !== categoriaF) return false;
+    if (dtIni && t.data_vencimento < dtIni) return false;
+    if (dtFim && t.data_vencimento > dtFim) return false;
+    return true;
+  });
+
+  const totais = filtered.reduce(
+    (acc, t) => {
+      acc.total += Number(t.valor);
+      if (t.status === "pago") acc.pago += Number(t.valor);
+      else acc.aberto += Number(t.valor);
+      return acc;
+    },
+    { total: 0, pago: 0, aberto: 0 },
+  );
+
+  const pag = usePagination(filtered, page, pageSize);
+  const list = pag.pageItems;
+
+  const categoriasDisponiveis = Array.from(
+    new Set((data ?? []).filter((t) => t.tipo === tab).map((t) => t.categoria)),
+  ).sort();
+
+  function limparFiltros() {
+    setBusca(""); setStatusF("todos"); setFormaF("todas");
+    setCategoriaF("todas"); setDtIni(""); setDtFim(""); setPage(1);
+  }
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["transacoes"] });
