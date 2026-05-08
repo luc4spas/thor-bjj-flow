@@ -69,7 +69,14 @@ function Alunos() {
     },
   });
 
-  const filtered = (alunos ?? []).filter((a) => a.nome.toLowerCase().includes(filter.toLowerCase()));
+  const filtered = (alunos ?? []).filter((a) => {
+    if (filter && !a.nome.toLowerCase().includes(filter.toLowerCase())) return false;
+    if (faixaF !== "todas" && a.faixa !== faixaF) return false;
+    if (statusF !== "todos" && a.status_pagamento !== statusF) return false;
+    return true;
+  });
+  const faixasDisponiveis = Array.from(new Set((alunos ?? []).map((a) => a.faixa))).sort();
+  const pag = usePagination(filtered, page, pageSize);
 
   async function handleDelete() {
     if (!deleting) return;
