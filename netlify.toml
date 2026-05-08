@@ -1,4 +1,4 @@
-though# Este projeto roda em TanStack Start com SSR (Cloudflare Workers via Lovable).
+# Este projeto roda em TanStack Start com SSR (Cloudflare Workers via Lovable).
 # Netlify atua apenas como proxy/CDN para o app publicado pela Lovable,
 # preservando 100% das funcionalidades (SSR, server functions, auth, Supabase).
 #
