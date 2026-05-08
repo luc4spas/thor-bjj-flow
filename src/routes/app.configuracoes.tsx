@@ -6,12 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "sonner";
 import { fmtBRL } from "@/lib/format";
-import type { AppRole } from "@/lib/auth-context";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Trash, Pencil, Check, X } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/app/configuracoes")({
   component: () => (
@@ -21,42 +20,69 @@ export const Route = createFileRoute("/app/configuracoes")({
   ),
 });
 
+interface Plano {
+  id: string;
+  nome: string;
+  duracao_meses: number;
+  valor_padrao: number;
+}
+
 function Config() {
   const qc = useQueryClient();
 
   const { data: planos } = useQuery({
     queryKey: ["cfg-planos"],
-    queryFn: async () => (await supabase.from("planos").select("*").order("duracao_meses")).data ?? [],
-  });
-  const { data: perfis } = useQuery({
-    queryKey: ["cfg-perfis"],
-    queryFn: async () => (await supabase.from("perfis").select("id,nome,email,role").order("nome")).data ?? [],
+    queryFn: async () => ((await supabase.from("planos").select("*").order("duracao_meses")).data ?? []) as Plano[],
   });
 
-  const [nome, setNome] = useState(""); const [dur, setDur] = useState("1"); const [valor, setValor] = useState("");
+  const [nome, setNome] = useState("");
+  const [dur, setDur] = useState("1");
+  const [valor, setValor] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNome, setEditNome] = useState("");
+  const [editDur, setEditDur] = useState("1");
+  const [editValor, setEditValor] = useState("");
+  const [delPlano, setDelPlano] = useState<Plano | null>(null);
 
   async function addPlano() {
     if (!nome || !valor) return toast.error("Preencha nome e valor");
-    const { error } = await supabase.from("planos").insert({ nome, duracao_meses: Number(dur), valor_padrao: Number(valor) });
+    const { error } = await supabase.from("planos").insert({
+      nome, duracao_meses: Number(dur), valor_padrao: Number(valor),
+    });
     if (error) toast.error(error.message);
-    else { toast.success("Plano adicionado"); setNome(""); setValor(""); qc.invalidateQueries({ queryKey: ["cfg-planos"] }); }
+    else { toast.success("Plano adicionado"); setNome(""); setValor(""); setDur("1"); qc.invalidateQueries({ queryKey: ["cfg-planos"] }); }
   }
 
-  async function delPlano(id: string) {
-    const { error } = await supabase.from("planos").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Plano removido"); qc.invalidateQueries({ queryKey: ["cfg-planos"] }); }
+  function startEdit(p: Plano) {
+    setEditingId(p.id);
+    setEditNome(p.nome);
+    setEditDur(String(p.duracao_meses));
+    setEditValor(String(p.valor_padrao));
   }
 
-  async function changeRole(id: string, role: AppRole) {
-    const { error } = await supabase.from("perfis").update({ role }).eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Perfil atualizado"); qc.invalidateQueries({ queryKey: ["cfg-perfis"] }); }
+  async function saveEdit() {
+    if (!editingId) return;
+    if (!editNome || !editValor) return toast.error("Preencha nome e valor");
+    const { error } = await supabase.from("planos").update({
+      nome: editNome, duracao_meses: Number(editDur), valor_padrao: Number(editValor),
+    }).eq("id", editingId);
+    if (error) toast.error(error.message);
+    else { toast.success("Plano atualizado"); setEditingId(null); qc.invalidateQueries({ queryKey: ["cfg-planos"] }); }
+  }
+
+  async function confirmDelete() {
+    if (!delPlano) return;
+    const { error } = await supabase.from("planos").delete().eq("id", delPlano.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Plano removido"); qc.invalidateQueries({ queryKey: ["cfg-planos"] }); }
+    setDelPlano(null);
   }
 
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Planos e usuários</p>
+        <p className="text-sm text-muted-foreground">Planos da academia</p>
       </header>
 
       <Card>
@@ -68,50 +94,68 @@ function Config() {
             <div className="space-y-1.5"><Label className="text-xs">Valor Padrão</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} /></div>
             <Button className="self-end" onClick={addPlano}><Plus className="mr-1 h-4 w-4" /> Adicionar</Button>
           </div>
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-muted-foreground"><tr><th className="py-2">Nome</th><th>Duração</th><th>Valor</th><th></th></tr></thead>
-            <tbody>
-              {(planos ?? []).map((p) => (
-                <tr key={p.id} className="border-t border-border">
-                  <td className="py-2 font-medium">{p.nome}</td>
-                  <td>{p.duracao_meses} m</td>
-                  <td>{fmtBRL(p.valor_padrao)}</td>
-                  <td className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => delPlano(p.id)}><Trash className="h-4 w-4 text-primary" /></Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+          <div className="overflow-hidden rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <tr><th className="px-3 py-2">Nome</th><th className="px-3 py-2">Duração</th><th className="px-3 py-2">Valor</th><th className="px-3 py-2 w-28"></th></tr>
+              </thead>
+              <tbody>
+                {(planos ?? []).length === 0 && (
+                  <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Nenhum plano cadastrado.</td></tr>
+                )}
+                {(planos ?? []).map((p) => {
+                  const isEditing = editingId === p.id;
+                  return (
+                    <tr key={p.id} className="border-t border-border">
+                      <td className="px-3 py-2 font-medium">
+                        {isEditing ? <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} /> : p.nome}
+                      </td>
+                      <td className="px-3 py-2">
+                        {isEditing ? <Input type="number" min={1} value={editDur} onChange={(e) => setEditDur(e.target.value)} className="w-20" /> : `${p.duracao_meses} m`}
+                      </td>
+                      <td className="px-3 py-2">
+                        {isEditing ? <Input type="number" step="0.01" value={editValor} onChange={(e) => setEditValor(e.target.value)} className="w-28" /> : fmtBRL(p.valor_padrao)}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {isEditing ? (
+                          <div className="flex justify-end gap-1">
+                            <Button size="icon" variant="ghost" onClick={saveEdit}><Check className="h-4 w-4 text-success" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}><X className="h-4 w-4" /></Button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => startEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => setDelPlano(p)}><Trash className="h-4 w-4 text-primary" /></Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle>Usuários e Permissões</CardTitle></CardHeader>
         <CardContent>
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-muted-foreground"><tr><th className="py-2">Nome</th><th>E-mail</th><th>Papel</th></tr></thead>
-            <tbody>
-              {(perfis ?? []).map((u) => (
-                <tr key={u.id} className="border-t border-border">
-                  <td className="py-2">{u.nome ?? "—"}</td>
-                  <td className="text-muted-foreground">{u.email}</td>
-                  <td>
-                    <Select value={u.role} onValueChange={(v) => changeRole(u.id, v as AppRole)}>
-                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="owner">Owner</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="instructor">Instructor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <p className="text-sm text-muted-foreground">
+            A gestão de usuários foi movida para o módulo dedicado <strong>Usuários</strong> no menu lateral.
+          </p>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={!!delPlano}
+        onOpenChange={(v) => { if (!v) setDelPlano(null); }}
+        title="Excluir plano"
+        description={`Excluir o plano "${delPlano?.nome}"? Contratos existentes não serão afetados.`}
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
