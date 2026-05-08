@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Navigate, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth, type AppRole } from "@/lib/auth-context";
-import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut, ShieldCheck } from "lucide-react";
 import logo from "@/assets/thor-logo.jpg";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { to: "/app/alunos", label: "Alunos", icon: Users, roles: ["owner", "admin", "instructor"] },
   { to: "/app/financeiro", label: "Financeiro", icon: Wallet, roles: ["owner", "admin"] },
   { to: "/app/relatorios", label: "Relatórios", icon: BarChart3, roles: ["owner", "admin"] },
+  { to: "/app/usuarios", label: "Usuários", icon: ShieldCheck, roles: ["owner", "admin"] },
   { to: "/app/configuracoes", label: "Configurações", icon: Settings, roles: ["owner", "admin"] },
 ];
 

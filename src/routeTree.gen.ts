@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppUsuariosRouteImport } from './routes/app.usuarios'
 import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/usuarios': typeof AppUsuariosRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/usuarios': typeof AppUsuariosRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/usuarios': typeof AppUsuariosRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/financeiro'
     | '/app/relatorios'
+    | '/app/usuarios'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/financeiro'
     | '/app/relatorios'
+    | '/app/usuarios'
     | '/app'
   id:
     | '__root__'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/financeiro'
     | '/app/relatorios'
+    | '/app/usuarios'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -167,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/usuarios': {
+      id: '/app/usuarios'
+      path: '/usuarios'
+      fullPath: '/app/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/relatorios': {
@@ -213,6 +232,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
+  AppUsuariosRoute: typeof AppUsuariosRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -222,6 +242,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
+  AppUsuariosRoute: AppUsuariosRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

@@ -10,11 +10,16 @@ interface AuthState {
   role: AppRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, nome: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
+  refreshRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
+
+async function fetchRoleFor(uid: string): Promise<AppRole> {
+  const { data } = await supabase.from("perfis").select("role").eq("id", uid).maybeSingle();
+  return ((data?.role as AppRole) ?? "instructor");
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -23,27 +28,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    let mounted = true;
+
+    const apply = async (s: Session | null) => {
+      if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => fetchRole(s.user.id), 0);
+        const r = await fetchRoleFor(s.user.id);
+        if (!mounted) return;
+        setRole(r);
       } else {
         setRole(null);
       }
+      if (mounted) setLoading(false);
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      // fire-and-forget so we don't deadlock the listener
+      void apply(s);
     });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      if (data.session?.user) fetchRole(data.session.user.id);
-      setLoading(false);
-    });
-    return () => sub.subscription.unsubscribe();
+    supabase.auth.getSession().then(({ data }) => apply(data.session));
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  async function fetchRole(uid: string) {
-    const { data } = await supabase.from("perfis").select("role").eq("id", uid).maybeSingle();
-    setRole((data?.role as AppRole) ?? "instructor");
+  async function refreshRole() {
+    if (user) setRole(await fetchRoleFor(user.id));
   }
 
   return (
@@ -54,15 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           return { error: error?.message };
         },
-        signUp: async (email, password, nome) => {
-          const redirect = `${window.location.origin}/`;
-          const { error } = await supabase.auth.signUp({
-            email, password,
-            options: { emailRedirectTo: redirect, data: { nome } },
-          });
-          return { error: error?.message };
-        },
         signOut: async () => { await supabase.auth.signOut(); },
+        refreshRole,
       }}
     >
       {children}
