@@ -12,8 +12,10 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { PaginationBar, usePagination } from "@/components/pagination-bar";
 
 export const Route = createFileRoute("/app/alunos")({
   component: () => (
