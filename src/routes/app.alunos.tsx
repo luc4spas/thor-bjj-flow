@@ -48,7 +48,7 @@ function Alunos() {
     queryFn: async (): Promise<AlunoRow[]> => {
       const { data: alunosData, error } = await supabase
         .from("alunos")
-        .select("id,nome,faixa,graus,data_nascimento,telefone,email,id_responsavel")
+        .select("id,nome,faixa,graus,data_nascimento,telefone,email,cpf,id_responsavel")
         .order("nome");
       if (error) throw error;
 

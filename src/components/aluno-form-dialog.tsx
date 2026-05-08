@@ -19,7 +19,15 @@ export interface AlunoEditPayload {
   graus: number;
   telefone: string | null;
   email: string | null;
+  cpf: string | null;
   id_responsavel: string | null;
+}
+
+function maskCPF(v: string) {
+  return v.replace(/\D/g, "").slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
 interface Props {
@@ -41,6 +49,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
   const [graus, setGraus] = useState("0");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
   // Responsavel
   const [respNome, setRespNome] = useState("");
   const [respCpf, setRespCpf] = useState("");
@@ -71,6 +80,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       setGraus(String(aluno.graus));
       setTelefone(aluno.telefone ?? "");
       setEmail(aluno.email ?? "");
+      setCpf(aluno.cpf ? maskCPF(aluno.cpf) : "");
       // Carregar responsável se houver
       if (aluno.id_responsavel) {
         supabase.from("responsaveis").select("*").eq("id", aluno.id_responsavel).maybeSingle()
@@ -87,7 +97,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       }
     } else {
       setNome(""); setDataNasc(""); setFaixa("Branca"); setGraus("0");
-      setTelefone(""); setEmail(""); setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
+      setTelefone(""); setEmail(""); setCpf(""); setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
       setPlanoId(""); setValorTotal(""); setDiaVenc("10");
       setDataInicio(new Date().toISOString().slice(0, 10));
     }
@@ -128,14 +138,14 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       if (isEdit) {
         const { error } = await supabase.from("alunos").update({
           nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
-          telefone: telefone || null, email: email || null, id_responsavel: idResponsavel,
+          telefone: telefone || null, email: email || null, cpf: cpf || null, id_responsavel: idResponsavel,
         }).eq("id", aluno!.id);
         if (error) throw error;
         toast.success("Aluno atualizado");
       } else {
         const { data: alunoNovo, error: ea } = await supabase.from("alunos").insert({
           nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
-          telefone: telefone || null, email: email || null, id_responsavel: idResponsavel,
+          telefone: telefone || null, email: email || null, cpf: cpf || null, id_responsavel: idResponsavel,
         }).select("id").single();
         if (ea) throw ea;
 
@@ -183,7 +193,10 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               <Field label="Data de Nascimento"><Input type="date" value={dataNasc} onChange={(e) => setDataNasc(e.target.value)} /></Field>
               <Field label="Telefone"><Input value={telefone} onChange={(e) => setTelefone(e.target.value)} /></Field>
             </div>
-            <Field label="E-mail"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="E-mail"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+              <Field label="CPF"><Input value={cpf} onChange={(e) => setCpf(maskCPF(e.target.value))} placeholder="000.000.000-00" inputMode="numeric" /></Field>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Faixa">
                 <Select value={faixa} onValueChange={setFaixa}>

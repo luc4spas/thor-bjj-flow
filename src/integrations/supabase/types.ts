@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       alunos: {
         Row: {
+          cpf: string | null
           created_at: string
           data_nascimento: string | null
           email: string | null
@@ -27,6 +28,7 @@ export type Database = {
           telefone: string | null
         }
         Insert: {
+          cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string | null
@@ -38,6 +40,7 @@ export type Database = {
           telefone?: string | null
         }
         Update: {
+          cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string | null
