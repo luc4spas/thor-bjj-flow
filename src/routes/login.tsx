@@ -13,12 +13,10 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [nome, setNome] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -27,12 +25,9 @@ function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const res = mode === "signin"
-      ? await signIn(email, password)
-      : await signUp(email, password, nome || email.split("@")[0]);
+    const res = await signIn(email, password);
     setBusy(false);
     if (res.error) toast.error(res.error);
-    else if (mode === "signup") toast.success("Conta criada! Faça login.");
   }
 
   const benefits = [
@@ -81,22 +76,12 @@ function LoginPage() {
       {/* FORM */}
       <section className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md rounded-2xl border bg-card/60 p-8 shadow-2xl backdrop-blur">
-          <h2 className="text-2xl font-bold">
-            {mode === "signin" ? "Entrar no sistema" : "Criar conta"}
-          </h2>
+          <h2 className="text-2xl font-bold">Entrar no sistema</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin"
-              ? "Acesse com suas credenciais para continuar"
-              : "Crie a primeira conta — você se tornará o owner"}
+            Acesse com suas credenciais para continuar
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome</Label>
-                <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
@@ -112,19 +97,15 @@ function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Aguarde…" : mode === "signin" ? "Entrar" : "Cadastrar"}
+              {busy ? "Aguarde…" : "Entrar"}
             </Button>
           </form>
 
-          <button
-            onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
-            className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            {mode === "signin" ? "Primeiro acesso? Criar conta" : "Já tenho conta — Entrar"}
-          </button>
-
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Thor BJJ ERP v1.0 · Sistema de Gestão
+            Novos usuários são criados pelo administrador dentro do sistema.
+          </p>
+          <p className="mt-1 text-center text-xs text-muted-foreground">
+            Thor BJJ ERP v1.0
           </p>
         </div>
       </section>
