@@ -18,7 +18,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, ShieldCheck } from "lucide-react";
+import { UserPlus, ShieldCheck, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/app/usuarios")({
   component: () => (
