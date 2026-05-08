@@ -26,6 +26,24 @@ export const Route = createFileRoute("/app/financeiro")({
 });
 
 type TipoTrans = "receita" | "despesa";
+type FormaPagamento =
+  | "dinheiro" | "pix" | "cartao_credito" | "cartao_debito"
+  | "boleto" | "transferencia" | "outro";
+
+const FORMAS_PAGAMENTO: { value: FormaPagamento; label: string }[] = [
+  { value: "dinheiro", label: "Dinheiro" },
+  { value: "pix", label: "PIX" },
+  { value: "cartao_credito", label: "Cartão de Crédito" },
+  { value: "cartao_debito", label: "Cartão de Débito" },
+  { value: "boleto", label: "Boleto" },
+  { value: "transferencia", label: "Transferência" },
+  { value: "outro", label: "Outro" },
+];
+
+function formaLabel(v?: string | null) {
+  if (!v) return "—";
+  return FORMAS_PAGAMENTO.find((f) => f.value === v)?.label ?? v;
+}
 
 interface TransacaoRow {
   id: string;
@@ -36,6 +54,7 @@ interface TransacaoRow {
   data_vencimento: string;
   data_pagamento: string | null;
   status: "pendente" | "pago" | "cancelado";
+  forma_pagamento: FormaPagamento | null;
   id_aluno: string | null;
   alunos: { nome: string } | null;
 }
@@ -46,13 +65,14 @@ function Financeiro() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<TransacaoRow | null>(null);
   const [deleting, setDeleting] = useState<TransacaoRow | null>(null);
+  const [paying, setPaying] = useState<TransacaoRow | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["transacoes"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transacoes")
-        .select("id,tipo,categoria,descricao,valor,data_vencimento,data_pagamento,status,id_aluno,alunos(nome)")
+        .select("id,tipo,categoria,descricao,valor,data_vencimento,data_pagamento,status,forma_pagamento,id_aluno,alunos(nome)")
         .order("data_vencimento", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as TransacaoRow[];
@@ -68,17 +88,9 @@ function Financeiro() {
     qc.invalidateQueries({ queryKey: ["alunos-list"] });
   }
 
-  async function marcarPago(id: string) {
-    const { error } = await supabase.from("transacoes").update({
-      status: "pago", data_pagamento: today,
-    }).eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Pagamento registrado!"); invalidate(); }
-  }
-
   async function reabrir(id: string) {
     const { error } = await supabase.from("transacoes").update({
-      status: "pendente", data_pagamento: null,
+      status: "pendente", data_pagamento: null, forma_pagamento: null,
     }).eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success("Lançamento reaberto"); invalidate(); }
@@ -121,12 +133,13 @@ function Financeiro() {
                   <th className="px-4 py-3">Valor</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Pagamento</th>
+                  <th className="px-4 py-3">Forma</th>
                   <th className="px-4 py-3 w-32"></th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>}
-                {!isLoading && list.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sem registros.</td></tr>}
+                {isLoading && <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>}
+                {!isLoading && list.length === 0 && <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Sem registros.</td></tr>}
                 {list.map((t) => {
                   const atrasado = t.status === "pendente" && t.data_vencimento < today;
                   return (
@@ -144,10 +157,11 @@ function Financeiro() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{fmtDate(t.data_pagamento)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formaLabel(t.forma_pagamento)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {t.status === "pendente" && (
-                            <Button size="sm" variant="outline" onClick={() => marcarPago(t.id)}>
+                            <Button size="sm" variant="outline" onClick={() => setPaying(t)}>
                               <Check className="mr-1 h-3 w-3" /> Pagar
                             </Button>
                           )}
@@ -189,6 +203,11 @@ function Financeiro() {
         editing={editing}
         onSaved={invalidate}
       />
+      <PagamentoDialog
+        transacao={paying}
+        onOpenChange={(v) => { if (!v) setPaying(null); }}
+        onSaved={invalidate}
+      />
       <ConfirmDialog
         open={!!deleting}
         onOpenChange={(v) => { if (!v) setDeleting(null); }}
@@ -198,6 +217,73 @@ function Financeiro() {
         onConfirm={handleDelete}
       />
     </div>
+  );
+}
+
+function PagamentoDialog({
+  transacao, onOpenChange, onSaved,
+}: {
+  transacao: TransacaoRow | null;
+  onOpenChange: (v: boolean) => void;
+  onSaved: () => void;
+}) {
+  const [forma, setForma] = useState<FormaPagamento>("pix");
+  const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (transacao) {
+      setForma((transacao.forma_pagamento as FormaPagamento) ?? "pix");
+      setData(new Date().toISOString().slice(0, 10));
+    }
+  }, [transacao]);
+
+  async function confirmar() {
+    if (!transacao) return;
+    setBusy(true);
+    const { error } = await supabase.from("transacoes").update({
+      status: "pago", data_pagamento: data, forma_pagamento: forma,
+    }).eq("id", transacao.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Pagamento registrado!");
+    onSaved();
+    onOpenChange(false);
+  }
+
+  return (
+    <Dialog open={!!transacao} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Registrar Pagamento</DialogTitle>
+        </DialogHeader>
+        {transacao && (
+          <div className="space-y-3">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Descrição</span><span>{transacao.descricao ?? transacao.categoria}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Valor</span><span>{fmtBRL(transacao.valor)}</span></div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Forma de Pagamento</Label>
+              <Select value={forma} onValueChange={(v) => setForma(v as FormaPagamento)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Data do Pagamento</Label>
+              <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={confirmar} disabled={busy}>{busy ? "Salvando…" : "Confirmar Pagamento"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -222,6 +308,7 @@ function TransacaoDialog({
   const [idAluno, setIdAluno] = useState<string>("");
   const [status, setStatus] = useState<"pendente" | "pago">("pendente");
   const [dataPagto, setDataPagto] = useState<string>("");
+  const [forma, setForma] = useState<FormaPagamento | "">("");
   const [busy, setBusy] = useState(false);
 
   const { data: alunos } = useQuery({
@@ -240,12 +327,13 @@ function TransacaoDialog({
       setIdAluno(editing.id_aluno ?? "");
       setStatus(editing.status === "pago" ? "pago" : "pendente");
       setDataPagto(editing.data_pagamento ?? "");
+      setForma((editing.forma_pagamento as FormaPagamento) ?? "");
     } else {
       setTipo(defaultTipo);
       setCategoria(defaultTipo === "receita" ? "Avulso" : "Aluguel");
       setDescricao(""); setValor("");
       setVenc(new Date().toISOString().slice(0, 10));
-      setIdAluno(""); setStatus("pendente"); setDataPagto("");
+      setIdAluno(""); setStatus("pendente"); setDataPagto(""); setForma("");
     }
   }, [open, editing, defaultTipo]);
 
@@ -254,6 +342,7 @@ function TransacaoDialog({
   async function salvar() {
     if (!valor) return toast.error("Informe o valor");
     if (!categoria) return toast.error("Informe a categoria");
+    if (status === "pago" && !forma) return toast.error("Informe a forma de pagamento");
     setBusy(true);
     const payload = {
       tipo, categoria, descricao: descricao || null,
@@ -261,6 +350,7 @@ function TransacaoDialog({
       id_aluno: tipo === "receita" && idAluno ? idAluno : null,
       status,
       data_pagamento: status === "pago" ? (dataPagto || new Date().toISOString().slice(0, 10)) : null,
+      forma_pagamento: status === "pago" && forma ? (forma as FormaPagamento) : null,
     };
     const { error } = isEdit
       ? await supabase.from("transacoes").update(payload).eq("id", editing!.id)
@@ -342,6 +432,18 @@ function TransacaoDialog({
               </div>
             )}
           </div>
+
+          {status === "pago" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Forma de Pagamento</Label>
+              <Select value={forma} onValueChange={(v) => setForma(v as FormaPagamento)}>
+                <SelectTrigger><SelectValue placeholder="Selecionar forma" /></SelectTrigger>
+                <SelectContent>
+                  {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
