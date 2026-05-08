@@ -138,14 +138,14 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       if (isEdit) {
         const { error } = await supabase.from("alunos").update({
           nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
-          telefone: telefone || null, email: email || null, id_responsavel: idResponsavel,
+          telefone: telefone || null, email: email || null, cpf: cpf || null, id_responsavel: idResponsavel,
         }).eq("id", aluno!.id);
         if (error) throw error;
         toast.success("Aluno atualizado");
       } else {
         const { data: alunoNovo, error: ea } = await supabase.from("alunos").insert({
           nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
-          telefone: telefone || null, email: email || null, id_responsavel: idResponsavel,
+          telefone: telefone || null, email: email || null, cpf: cpf || null, id_responsavel: idResponsavel,
         }).select("id").single();
         if (ea) throw ea;
 
