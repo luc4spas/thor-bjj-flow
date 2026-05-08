@@ -350,7 +350,7 @@ function TransacaoDialog({
       id_aluno: tipo === "receita" && idAluno ? idAluno : null,
       status,
       data_pagamento: status === "pago" ? (dataPagto || new Date().toISOString().slice(0, 10)) : null,
-      forma_pagamento: status === "pago" ? forma : null,
+      forma_pagamento: status === "pago" && forma ? (forma as FormaPagamento) : null,
     };
     const { error } = isEdit
       ? await supabase.from("transacoes").update(payload).eq("id", editing!.id)
