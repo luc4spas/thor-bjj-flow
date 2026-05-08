@@ -193,7 +193,10 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               <Field label="Data de Nascimento"><Input type="date" value={dataNasc} onChange={(e) => setDataNasc(e.target.value)} /></Field>
               <Field label="Telefone"><Input value={telefone} onChange={(e) => setTelefone(e.target.value)} /></Field>
             </div>
-            <Field label="E-mail"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="E-mail"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+              <Field label="CPF"><Input value={cpf} onChange={(e) => setCpf(maskCPF(e.target.value))} placeholder="000.000.000-00" inputMode="numeric" /></Field>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Faixa">
                 <Select value={faixa} onValueChange={setFaixa}>
