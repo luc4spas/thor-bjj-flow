@@ -49,6 +49,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
   const [graus, setGraus] = useState("0");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
   // Responsavel
   const [respNome, setRespNome] = useState("");
   const [respCpf, setRespCpf] = useState("");
