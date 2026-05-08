@@ -19,7 +19,15 @@ export interface AlunoEditPayload {
   graus: number;
   telefone: string | null;
   email: string | null;
+  cpf: string | null;
   id_responsavel: string | null;
+}
+
+function maskCPF(v: string) {
+  return v.replace(/\D/g, "").slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
 interface Props {
