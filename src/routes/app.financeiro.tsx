@@ -169,13 +169,67 @@ function Financeiro() {
         </Button>
       </header>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as TipoTrans)}>
+      <Tabs value={tab} onValueChange={(v) => { setTab(v as TipoTrans); setPage(1); setCategoriaF("todas"); }}>
         <TabsList>
           <TabsTrigger value="receita">Contas a Receber</TabsTrigger>
           <TabsTrigger value="despesa">Contas a Pagar</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={tab} className="mt-4">
+        <TabsContent value={tab} className="mt-4 space-y-4">
+          {/* Filtros */}
+          <div className="rounded-lg border bg-card p-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-6">
+              <div className="lg:col-span-2 relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" placeholder="Buscar descrição, aluno…"
+                  value={busca} onChange={(e) => { setBusca(e.target.value); setPage(1); }} />
+              </div>
+              <Select value={statusF} onValueChange={(v) => { setStatusF(v as typeof statusF); setPage(1); }}>
+                <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos status</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="atrasado">Atrasado</SelectItem>
+                  <SelectItem value="pago">Pago</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={categoriaF} onValueChange={(v) => { setCategoriaF(v); setPage(1); }}>
+                <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas categorias</SelectItem>
+                  {categoriasDisponiveis.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={formaF} onValueChange={(v) => { setFormaF(v as typeof formaF); setPage(1); }}>
+                <SelectTrigger><SelectValue placeholder="Forma de pagamento" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas formas</SelectItem>
+                  {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <div className="flex items-end gap-1">
+                <Button variant="ghost" size="sm" onClick={limparFiltros} className="ml-auto">
+                  <X className="mr-1 h-3 w-3" /> Limpar
+                </Button>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Vencimento de</Label>
+                <Input type="date" value={dtIni} onChange={(e) => { setDtIni(e.target.value); setPage(1); }} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Vencimento até</Label>
+                <Input type="date" value={dtFim} onChange={(e) => { setDtFim(e.target.value); setPage(1); }} />
+              </div>
+              <div className="md:col-span-2 grid grid-cols-3 gap-2 self-end rounded-md border bg-muted/30 px-3 py-2 text-xs">
+                <div><div className="text-muted-foreground">Total</div><div className="font-semibold">{fmtBRL(totais.total)}</div></div>
+                <div><div className="text-muted-foreground">Pago</div><div className="font-semibold text-success">{fmtBRL(totais.pago)}</div></div>
+                <div><div className="text-muted-foreground">Em aberto</div><div className="font-semibold text-warning">{fmtBRL(totais.aberto)}</div></div>
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-hidden rounded-lg border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
@@ -245,6 +299,12 @@ function Financeiro() {
                 })}
               </tbody>
             </table>
+            <PaginationBar
+              page={pag.page} totalPages={pag.totalPages} total={pag.total}
+              from={pag.from} to={pag.to} pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+            />
           </div>
         </TabsContent>
       </Tabs>
