@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 import { fmtBRL } from "@/lib/format";
-import { Plus, Trash, Pencil, Check, X } from "lucide-react";
+import { Plus, Trash, Pencil, Check, X, Search } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationBar, usePagination } from "@/components/pagination-bar";
 
 export const Route = createFileRoute("/app/configuracoes")({
   component: () => (
