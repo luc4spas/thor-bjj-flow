@@ -125,23 +125,30 @@ function UsuariosPage() {
                     <RoleBadge role={p.role} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {canEdit ? (
-                      <Select
-                        defaultValue={p.role}
-                        onValueChange={(v) => updateRole.mutate({ id: p.id, role: v as AppRole })}
-                      >
-                        <SelectTrigger className="w-[160px] ml-auto">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {myRole === "owner" && <SelectItem value="owner">Owner</SelectItem>}
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="instructor">Instrutor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">{isSelf ? "Você" : "—"}</span>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {canEdit ? (
+                        <Select
+                          defaultValue={p.role}
+                          onValueChange={(v) => updateRole.mutate({ id: p.id, role: v as AppRole })}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {myRole === "owner" && <SelectItem value="owner">Owner</SelectItem>}
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="instructor">Instrutor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{isSelf ? "Você" : "—"}</span>
+                      )}
+                      {canEdit && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDelPerfil(p)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -149,6 +156,15 @@ function UsuariosPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!delPerfil}
+        onOpenChange={(v) => { if (!v && !busyDel) setDelPerfil(null); }}
+        title="Excluir usuário"
+        description={`Excluir "${delPerfil?.nome ?? delPerfil?.email}"? Essa ação remove o acesso ao sistema.`}
+        confirmLabel={busyDel ? "Excluindo…" : "Excluir"}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
