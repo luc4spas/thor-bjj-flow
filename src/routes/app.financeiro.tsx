@@ -5,13 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL, fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, Pencil, Trash2, MoreHorizontal, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/app/financeiro")({
   component: () => (
@@ -21,10 +25,27 @@ export const Route = createFileRoute("/app/financeiro")({
   ),
 });
 
+type TipoTrans = "receita" | "despesa";
+
+interface TransacaoRow {
+  id: string;
+  tipo: TipoTrans;
+  categoria: string;
+  descricao: string | null;
+  valor: number;
+  data_vencimento: string;
+  data_pagamento: string | null;
+  status: "pendente" | "pago" | "cancelado";
+  id_aluno: string | null;
+  alunos: { nome: string } | null;
+}
+
 function Financeiro() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"receita" | "despesa">("receita");
-  const [openDespesa, setOpenDespesa] = useState(false);
+  const [tab, setTab] = useState<TipoTrans>("receita");
+  const [openForm, setOpenForm] = useState(false);
+  const [editing, setEditing] = useState<TransacaoRow | null>(null);
+  const [deleting, setDeleting] = useState<TransacaoRow | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["transacoes"],
@@ -34,19 +55,41 @@ function Financeiro() {
         .select("id,tipo,categoria,descricao,valor,data_vencimento,data_pagamento,status,id_aluno,alunos(nome)")
         .order("data_vencimento", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as TransacaoRow[];
     },
   });
 
   const list = (data ?? []).filter((t) => t.tipo === tab);
   const today = new Date().toISOString().slice(0, 10);
 
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: ["transacoes"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-financeiro"] });
+    qc.invalidateQueries({ queryKey: ["alunos-list"] });
+  }
+
   async function marcarPago(id: string) {
     const { error } = await supabase.from("transacoes").update({
       status: "pago", data_pagamento: today,
     }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Pagamento registrado!"); qc.invalidateQueries({ queryKey: ["transacoes"] }); qc.invalidateQueries({ queryKey: ["dashboard-financeiro"] }); }
+    else { toast.success("Pagamento registrado!"); invalidate(); }
+  }
+
+  async function reabrir(id: string) {
+    const { error } = await supabase.from("transacoes").update({
+      status: "pendente", data_pagamento: null,
+    }).eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Lançamento reaberto"); invalidate(); }
+  }
+
+  async function handleDelete() {
+    if (!deleting) return;
+    const { error } = await supabase.from("transacoes").delete().eq("id", deleting.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Lançamento excluído"); invalidate(); }
+    setDeleting(null);
   }
 
   return (
@@ -56,10 +99,12 @@ function Financeiro() {
           <h1 className="text-2xl font-bold">Financeiro</h1>
           <p className="text-sm text-muted-foreground">Contas a Receber e a Pagar</p>
         </div>
-        <Button onClick={() => setOpenDespesa(true)}><Plus className="mr-2 h-4 w-4" /> Nova Despesa</Button>
+        <Button onClick={() => { setEditing(null); setOpenForm(true); }}>
+          <Plus className="mr-2 h-4 w-4" /> Novo Lançamento
+        </Button>
       </header>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as TipoTrans)}>
         <TabsList>
           <TabsTrigger value="receita">Contas a Receber</TabsTrigger>
           <TabsTrigger value="despesa">Contas a Pagar</TabsTrigger>
@@ -76,7 +121,7 @@ function Financeiro() {
                   <th className="px-4 py-3">Valor</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Pagamento</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3 w-32"></th>
                 </tr>
               </thead>
               <tbody>
@@ -100,11 +145,33 @@ function Financeiro() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{fmtDate(t.data_pagamento)}</td>
                       <td className="px-4 py-3 text-right">
-                        {t.status === "pendente" && (
-                          <Button size="sm" variant="outline" onClick={() => marcarPago(t.id)}>
-                            <Check className="mr-1 h-3 w-3" /> Pagar
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-1">
+                          {t.status === "pendente" && (
+                            <Button size="sm" variant="outline" onClick={() => marcarPago(t.id)}>
+                              <Check className="mr-1 h-3 w-3" /> Pagar
+                            </Button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => { setEditing(t); setOpenForm(true); }}>
+                                <Pencil className="mr-2 h-4 w-4" /> Editar
+                              </DropdownMenuItem>
+                              {t.status === "pago" && (
+                                <DropdownMenuItem onClick={() => reabrir(t.id)}>
+                                  <RotateCcw className="mr-2 h-4 w-4" /> Reabrir
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleting(t)}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -115,49 +182,165 @@ function Financeiro() {
         </TabsContent>
       </Tabs>
 
-      <DespesaDialog open={openDespesa} onOpenChange={setOpenDespesa} onSaved={() => qc.invalidateQueries({ queryKey: ["transacoes"] })} />
+      <TransacaoDialog
+        open={openForm}
+        onOpenChange={(v) => { setOpenForm(v); if (!v) setEditing(null); }}
+        defaultTipo={tab}
+        editing={editing}
+        onSaved={invalidate}
+      />
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(v) => { if (!v) setDeleting(null); }}
+        title="Excluir lançamento"
+        description="Esta ação removerá o lançamento financeiro permanentemente."
+        confirmLabel="Excluir"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
 
-function DespesaDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; onSaved: () => void }) {
-  const [categoria, setCategoria] = useState("Aluguel");
+const CATEGORIAS_DESPESA = ["Aluguel", "Salário", "Material", "Marketing", "Utilidades", "Outros"];
+const CATEGORIAS_RECEITA = ["Mensalidade", "Matrícula", "Avulso", "Outros"];
+
+function TransacaoDialog({
+  open, onOpenChange, defaultTipo, editing, onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  defaultTipo: TipoTrans;
+  editing: TransacaoRow | null;
+  onSaved: () => void;
+}) {
+  const isEdit = !!editing;
+  const [tipo, setTipo] = useState<TipoTrans>(defaultTipo);
+  const [categoria, setCategoria] = useState("");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [venc, setVenc] = useState(new Date().toISOString().slice(0, 10));
+  const [idAluno, setIdAluno] = useState<string>("");
+  const [status, setStatus] = useState<"pendente" | "pago">("pendente");
+  const [dataPagto, setDataPagto] = useState<string>("");
   const [busy, setBusy] = useState(false);
+
+  const { data: alunos } = useQuery({
+    queryKey: ["alunos-min"],
+    queryFn: async () => (await supabase.from("alunos").select("id,nome").order("nome")).data ?? [],
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      setTipo(editing.tipo);
+      setCategoria(editing.categoria);
+      setDescricao(editing.descricao ?? "");
+      setValor(String(editing.valor));
+      setVenc(editing.data_vencimento);
+      setIdAluno(editing.id_aluno ?? "");
+      setStatus(editing.status === "pago" ? "pago" : "pendente");
+      setDataPagto(editing.data_pagamento ?? "");
+    } else {
+      setTipo(defaultTipo);
+      setCategoria(defaultTipo === "receita" ? "Avulso" : "Aluguel");
+      setDescricao(""); setValor("");
+      setVenc(new Date().toISOString().slice(0, 10));
+      setIdAluno(""); setStatus("pendente"); setDataPagto("");
+    }
+  }, [open, editing, defaultTipo]);
+
+  const categorias = tipo === "receita" ? CATEGORIAS_RECEITA : CATEGORIAS_DESPESA;
 
   async function salvar() {
     if (!valor) return toast.error("Informe o valor");
+    if (!categoria) return toast.error("Informe a categoria");
     setBusy(true);
-    const { error } = await supabase.from("transacoes").insert({
-      tipo: "despesa", categoria, descricao: descricao || null,
-      valor: Number(valor), data_vencimento: venc, status: "pendente",
-    });
+    const payload = {
+      tipo, categoria, descricao: descricao || null,
+      valor: Number(valor), data_vencimento: venc,
+      id_aluno: tipo === "receita" && idAluno ? idAluno : null,
+      status,
+      data_pagamento: status === "pago" ? (dataPagto || new Date().toISOString().slice(0, 10)) : null,
+    };
+    const { error } = isEdit
+      ? await supabase.from("transacoes").update(payload).eq("id", editing!.id)
+      : await supabase.from("transacoes").insert(payload);
     setBusy(false);
-    if (error) toast.error(error.message);
-    else { toast.success("Despesa adicionada"); onSaved(); onOpenChange(false); setDescricao(""); setValor(""); }
+    if (error) return toast.error(error.message);
+    toast.success(isEdit ? "Lançamento atualizado" : "Lançamento criado");
+    onSaved(); onOpenChange(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Nova Despesa</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Editar Lançamento" : "Novo Lançamento"}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
+          {!isEdit && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tipo</Label>
+              <Select value={tipo} onValueChange={(v) => { setTipo(v as TipoTrans); setCategoria(v === "receita" ? "Avulso" : "Aluguel"); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receita">Receita</SelectItem>
+                  <SelectItem value="despesa">Despesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs">Categoria</Label>
             <Select value={categoria} onValueChange={setCategoria}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["Aluguel", "Salário", "Material", "Marketing", "Utilidades", "Outros"].map((c) =>
-                  <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {categorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5"><Label className="text-xs">Descrição</Label><Input value={descricao} onChange={(e) => setDescricao(e.target.value)} /></div>
+
+          {tipo === "receita" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Aluno (opcional)</Label>
+              <Select value={idAluno || "none"} onValueChange={(v) => setIdAluno(v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecionar aluno" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— sem vínculo —</SelectItem>
+                  {(alunos ?? []).map((a) => <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Descrição</Label>
+            <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label className="text-xs">Valor</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} /></div>
             <div className="space-y-1.5"><Label className="text-xs">Vencimento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as "pendente" | "pago")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="pago">Pago</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {status === "pago" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Data Pagamento</Label>
+                <Input type="date" value={dataPagto} onChange={(e) => setDataPagto(e.target.value)} />
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>
