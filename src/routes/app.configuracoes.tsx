@@ -104,16 +104,22 @@ function Config() {
             <Button className="self-end" onClick={addPlano}><Plus className="mr-1 h-4 w-4" /> Adicionar</Button>
           </div>
 
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-9" placeholder="Buscar plano…"
+              value={busca} onChange={(e) => { setBusca(e.target.value); setPage(1); }} />
+          </div>
+
           <div className="overflow-hidden rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr><th className="px-3 py-2">Nome</th><th className="px-3 py-2">Duração</th><th className="px-3 py-2">Valor</th><th className="px-3 py-2 w-28"></th></tr>
               </thead>
               <tbody>
-                {(planos ?? []).length === 0 && (
-                  <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Nenhum plano cadastrado.</td></tr>
+                {pag.pageItems.length === 0 && (
+                  <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Nenhum plano encontrado.</td></tr>
                 )}
-                {(planos ?? []).map((p) => {
+                {pag.pageItems.map((p) => {
                   const isEditing = editingId === p.id;
                   return (
                     <tr key={p.id} className="border-t border-border">
@@ -144,7 +150,15 @@ function Config() {
                 })}
               </tbody>
             </table>
+            <PaginationBar
+              page={pag.page} totalPages={pag.totalPages} total={pag.total}
+              from={pag.from} to={pag.to} pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+              pageSizeOptions={[5, 10, 25, 50]}
+            />
           </div>
+
         </CardContent>
       </Card>
 
