@@ -14,16 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alunos: {
+        Row: {
+          created_at: string
+          data_nascimento: string | null
+          email: string | null
+          faixa: string
+          graus: number
+          id: string
+          id_responsavel: string | null
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_nascimento?: string | null
+          email?: string | null
+          faixa?: string
+          graus?: number
+          id?: string
+          id_responsavel?: string | null
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_nascimento?: string | null
+          email?: string | null
+          faixa?: string
+          graus?: number
+          id?: string
+          id_responsavel?: string | null
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alunos_id_responsavel_fkey"
+            columns: ["id_responsavel"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos: {
+        Row: {
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          dia_vencimento: number
+          id: string
+          id_aluno: string
+          id_plano: string
+          status: Database["public"]["Enums"]["contrato_status"]
+          valor_total: number
+        }
+        Insert: {
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          dia_vencimento: number
+          id?: string
+          id_aluno: string
+          id_plano: string
+          status?: Database["public"]["Enums"]["contrato_status"]
+          valor_total: number
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          dia_vencimento?: number
+          id?: string
+          id_aluno?: string
+          id_plano?: string
+          status?: Database["public"]["Enums"]["contrato_status"]
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_id_plano_fkey"
+            columns: ["id_plano"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perfis: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          nome?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      planos: {
+        Row: {
+          created_at: string
+          duracao_meses: number
+          id: string
+          nome: string
+          valor_padrao: number
+        }
+        Insert: {
+          created_at?: string
+          duracao_meses: number
+          id?: string
+          nome: string
+          valor_padrao: number
+        }
+        Update: {
+          created_at?: string
+          duracao_meses?: number
+          id?: string
+          nome?: string
+          valor_padrao?: number
+        }
+        Relationships: []
+      }
+      responsaveis: {
+        Row: {
+          cpf: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
+      transacoes: {
+        Row: {
+          categoria: string
+          created_at: string
+          data_pagamento: string | null
+          data_vencimento: string
+          descricao: string | null
+          id: string
+          id_aluno: string | null
+          id_contrato: string | null
+          status: Database["public"]["Enums"]["transacao_status"]
+          tipo: Database["public"]["Enums"]["transacao_tipo"]
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento: string
+          descricao?: string | null
+          id?: string
+          id_aluno?: string | null
+          id_contrato?: string | null
+          status?: Database["public"]["Enums"]["transacao_status"]
+          tipo: Database["public"]["Enums"]["transacao_tipo"]
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento?: string
+          descricao?: string | null
+          id?: string
+          id_aluno?: string | null
+          id_contrato?: string | null
+          status?: Database["public"]["Enums"]["transacao_status"]
+          tipo?: Database["public"]["Enums"]["transacao_tipo"]
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_id_contrato_fkey"
+            columns: ["id_contrato"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_owner: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "admin" | "instructor"
+      contrato_status: "ativo" | "cancelado"
+      transacao_status: "pago" | "pendente"
+      transacao_tipo: "receita" | "despesa"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +386,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "admin", "instructor"],
+      contrato_status: ["ativo", "cancelado"],
+      transacao_status: ["pago", "pendente"],
+      transacao_tipo: ["receita", "despesa"],
+    },
   },
 } as const
