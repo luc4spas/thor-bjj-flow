@@ -38,6 +38,10 @@ function Alunos() {
   const [editing, setEditing] = useState<AlunoEditPayload | null>(null);
   const [deleting, setDeleting] = useState<AlunoRow | null>(null);
   const [filter, setFilter] = useState("");
+  const [faixaF, setFaixaF] = useState<string>("todas");
+  const [statusF, setStatusF] = useState<"todos" | "ok" | "atrasado" | "neutro">("todos");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data: alunos, isLoading } = useQuery({
     queryKey: ["alunos-list"],
