@@ -4,10 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { fmtDate } from "@/lib/format";
-import { AlunoFormDialog } from "@/components/aluno-form-dialog";
+import { AlunoFormDialog, type AlunoEditPayload } from "@/components/aluno-form-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/app/alunos")({
   component: () => (
@@ -17,19 +23,18 @@ export const Route = createFileRoute("/app/alunos")({
   ),
 });
 
-interface AlunoRow {
-  id: string;
-  nome: string;
-  faixa: string;
-  graus: number;
-  data_nascimento: string | null;
-  telefone: string | null;
+interface AlunoRow extends AlunoEditPayload {
   status_pagamento: "ok" | "atrasado" | "neutro";
 }
 
 function Alunos() {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const { role } = useAuth();
+  const canManage = role === "owner" || role === "admin";
+
+  const [openForm, setOpenForm] = useState(false);
+  const [editing, setEditing] = useState<AlunoEditPayload | null>(null);
+  const [deleting, setDeleting] = useState<AlunoRow | null>(null);
   const [filter, setFilter] = useState("");
 
   const { data: alunos, isLoading } = useQuery({
@@ -37,11 +42,10 @@ function Alunos() {
     queryFn: async (): Promise<AlunoRow[]> => {
       const { data: alunosData, error } = await supabase
         .from("alunos")
-        .select("id,nome,faixa,graus,data_nascimento,telefone")
+        .select("id,nome,faixa,graus,data_nascimento,telefone,email,id_responsavel")
         .order("nome");
       if (error) throw error;
 
-      // Tentar buscar transações (somente owner/admin terão acesso por RLS)
       const { data: transData } = await supabase
         .from("transacoes")
         .select("id_aluno,status,data_vencimento,tipo");
@@ -61,6 +65,18 @@ function Alunos() {
 
   const filtered = (alunos ?? []).filter((a) => a.nome.toLowerCase().includes(filter.toLowerCase()));
 
+  async function handleDelete() {
+    if (!deleting) return;
+    const { error } = await supabase.from("alunos").delete().eq("id", deleting.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Aluno removido");
+      qc.invalidateQueries({ queryKey: ["alunos-list"] });
+      qc.invalidateQueries({ queryKey: ["transacoes"] });
+    }
+    setDeleting(null);
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -68,7 +84,11 @@ function Alunos() {
           <h1 className="text-2xl font-bold">Alunos</h1>
           <p className="text-sm text-muted-foreground">Cadastro e acompanhamento dos atletas</p>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Novo Aluno</Button>
+        {canManage && (
+          <Button onClick={() => { setEditing(null); setOpenForm(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Novo Aluno
+          </Button>
+        )}
       </header>
 
       <div className="relative max-w-sm">
@@ -86,32 +106,63 @@ function Alunos() {
               <th className="px-4 py-3">Graus</th>
               <th className="px-4 py-3">Nascimento</th>
               <th className="px-4 py-3">Telefone</th>
+              <th className="px-4 py-3 w-12"></th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>
             )}
             {!isLoading && filtered.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum aluno cadastrado.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum aluno cadastrado.</td></tr>
             )}
             {filtered.map((a) => (
               <tr key={a.id} className="border-t border-border hover:bg-muted/30">
-                <td className="px-4 py-3">
-                  <StatusDot status={a.status_pagamento} />
-                </td>
+                <td className="px-4 py-3"><StatusDot status={a.status_pagamento} /></td>
                 <td className="px-4 py-3 font-medium">{a.nome}</td>
                 <td className="px-4 py-3">{a.faixa}</td>
                 <td className="px-4 py-3">{a.graus}</td>
                 <td className="px-4 py-3">{fmtDate(a.data_nascimento)}</td>
                 <td className="px-4 py-3 text-muted-foreground">{a.telefone ?? "—"}</td>
+                <td className="px-4 py-3 text-right">
+                  {canManage && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => { setEditing(a); setOpenForm(true); }}>
+                          <Pencil className="mr-2 h-4 w-4" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleting(a)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <AlunoFormDialog open={open} onOpenChange={setOpen} onSaved={() => qc.invalidateQueries({ queryKey: ["alunos-list"] })} />
+      <AlunoFormDialog
+        open={openForm}
+        onOpenChange={(v) => { setOpenForm(v); if (!v) setEditing(null); }}
+        aluno={editing}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["alunos-list"] })}
+      />
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(v) => { if (!v) setDeleting(null); }}
+        title="Excluir aluno"
+        description={`Excluir "${deleting?.nome}" removerá também contratos e parcelas vinculadas. Confirmar?`}
+        confirmLabel="Excluir"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
