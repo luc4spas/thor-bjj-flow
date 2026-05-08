@@ -65,6 +65,25 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [delPerfil, setDelPerfil] = useState<Perfil | null>(null);
+  const [busyDel, setBusyDel] = useState(false);
+
+  async function confirmDelete() {
+    if (!delPerfil) return;
+    setBusyDel(true);
+    const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+      body: { id: delPerfil.id },
+    });
+    setBusyDel(false);
+    if (error || (data as { error?: string })?.error) {
+      toast.error((data as { error?: string })?.error ?? error?.message ?? "Falha ao excluir");
+      return;
+    }
+    toast.success("Usuário excluído");
+    qc.invalidateQueries({ queryKey: ["perfis"] });
+    setDelPerfil(null);
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
