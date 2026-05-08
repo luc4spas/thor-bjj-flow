@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Navigate, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth, type AppRole } from "@/lib/auth-context";
-import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut, ShieldCheck } from "lucide-react";
 import logo from "@/assets/thor-logo.jpg";
 import { Button } from "@/components/ui/button";
 
