@@ -191,6 +191,7 @@ export type Database = {
           data_pagamento: string | null
           data_vencimento: string
           descricao: string | null
+          forma_pagamento: Database["public"]["Enums"]["forma_pagamento"] | null
           id: string
           id_aluno: string | null
           id_contrato: string | null
@@ -204,6 +205,9 @@ export type Database = {
           data_pagamento?: string | null
           data_vencimento: string
           descricao?: string | null
+          forma_pagamento?:
+            | Database["public"]["Enums"]["forma_pagamento"]
+            | null
           id?: string
           id_aluno?: string | null
           id_contrato?: string | null
@@ -217,6 +221,9 @@ export type Database = {
           data_pagamento?: string | null
           data_vencimento?: string
           descricao?: string | null
+          forma_pagamento?:
+            | Database["public"]["Enums"]["forma_pagamento"]
+            | null
           id?: string
           id_aluno?: string | null
           id_contrato?: string | null
@@ -258,6 +265,14 @@ export type Database = {
     Enums: {
       app_role: "owner" | "admin" | "instructor"
       contrato_status: "ativo" | "cancelado"
+      forma_pagamento:
+        | "dinheiro"
+        | "pix"
+        | "cartao_credito"
+        | "cartao_debito"
+        | "boleto"
+        | "transferencia"
+        | "outro"
       transacao_status: "pago" | "pendente"
       transacao_tipo: "receita" | "despesa"
     }
@@ -389,6 +404,15 @@ export const Constants = {
     Enums: {
       app_role: ["owner", "admin", "instructor"],
       contrato_status: ["ativo", "cancelado"],
+      forma_pagamento: [
+        "dinheiro",
+        "pix",
+        "cartao_credito",
+        "cartao_debito",
+        "boleto",
+        "transferencia",
+        "outro",
+      ],
       transacao_status: ["pago", "pendente"],
       transacao_tipo: ["receita", "despesa"],
     },
