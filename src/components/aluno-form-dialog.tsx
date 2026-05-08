@@ -80,6 +80,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       setGraus(String(aluno.graus));
       setTelefone(aluno.telefone ?? "");
       setEmail(aluno.email ?? "");
+      setCpf(aluno.cpf ? maskCPF(aluno.cpf) : "");
       // Carregar responsável se houver
       if (aluno.id_responsavel) {
         supabase.from("responsaveis").select("*").eq("id", aluno.id_responsavel).maybeSingle()
