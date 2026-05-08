@@ -20,6 +20,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { UserPlus, ShieldCheck, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationBar, usePagination } from "@/components/pagination-bar";
+import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/app/usuarios")({
   component: () => (
@@ -67,6 +69,20 @@ function UsuariosPage() {
 
   const [delPerfil, setDelPerfil] = useState<Perfil | null>(null);
   const [busyDel, setBusyDel] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [roleF, setRoleF] = useState<"todos" | AppRole>("todos");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const filtered = (perfis ?? []).filter((p) => {
+    if (roleF !== "todos" && p.role !== roleF) return false;
+    if (busca) {
+      const q = busca.toLowerCase();
+      if (!`${p.nome ?? ""} ${p.email ?? ""}`.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  const pag = usePagination(filtered, page, pageSize);
 
   async function confirmDelete() {
     if (!delPerfil) return;
@@ -98,7 +114,24 @@ function UsuariosPage() {
         <NewUserDialog />
       </header>
 
-      <div className="rounded-lg border bg-card">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Buscar por nome ou e-mail…"
+            value={busca} onChange={(e) => { setBusca(e.target.value); setPage(1); }} />
+        </div>
+        <Select value={roleF} onValueChange={(v) => { setRoleF(v as typeof roleF); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Perfil" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os perfis</SelectItem>
+            <SelectItem value="owner">Owner</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="instructor">Instrutor</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="rounded-lg border bg-card overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -112,7 +145,10 @@ function UsuariosPage() {
             {isLoading && (
               <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
             )}
-            {!isLoading && (perfis ?? []).map((p) => {
+            {!isLoading && pag.pageItems.length === 0 && (
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado.</TableCell></TableRow>
+            )}
+            {!isLoading && pag.pageItems.map((p) => {
               const isSelf = p.id === me?.id;
               const canEdit =
                 !isSelf &&
@@ -155,6 +191,12 @@ function UsuariosPage() {
             })}
           </TableBody>
         </Table>
+        <PaginationBar
+          page={pag.page} totalPages={pag.totalPages} total={pag.total}
+          from={pag.from} to={pag.to} pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
       </div>
 
       <ConfirmDialog

@@ -12,8 +12,10 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { PaginationBar, usePagination } from "@/components/pagination-bar";
 
 export const Route = createFileRoute("/app/alunos")({
   component: () => (
@@ -36,6 +38,10 @@ function Alunos() {
   const [editing, setEditing] = useState<AlunoEditPayload | null>(null);
   const [deleting, setDeleting] = useState<AlunoRow | null>(null);
   const [filter, setFilter] = useState("");
+  const [faixaF, setFaixaF] = useState<string>("todas");
+  const [statusF, setStatusF] = useState<"todos" | "ok" | "atrasado" | "neutro">("todos");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data: alunos, isLoading } = useQuery({
     queryKey: ["alunos-list"],
@@ -63,7 +69,14 @@ function Alunos() {
     },
   });
 
-  const filtered = (alunos ?? []).filter((a) => a.nome.toLowerCase().includes(filter.toLowerCase()));
+  const filtered = (alunos ?? []).filter((a) => {
+    if (filter && !a.nome.toLowerCase().includes(filter.toLowerCase())) return false;
+    if (faixaF !== "todas" && a.faixa !== faixaF) return false;
+    if (statusF !== "todos" && a.status_pagamento !== statusF) return false;
+    return true;
+  });
+  const faixasDisponiveis = Array.from(new Set((alunos ?? []).map((a) => a.faixa))).sort();
+  const pag = usePagination(filtered, page, pageSize);
 
   async function handleDelete() {
     if (!deleting) return;
@@ -95,9 +108,28 @@ function Alunos() {
         )}
       </header>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input className="pl-9" placeholder="Buscar por nome…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Buscar por nome…"
+            value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} />
+        </div>
+        <Select value={faixaF} onValueChange={(v) => { setFaixaF(v); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Faixa" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as faixas</SelectItem>
+            {faixasDisponiveis.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={statusF} onValueChange={(v) => { setStatusF(v as typeof statusF); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="ok">Em dia</SelectItem>
+            <SelectItem value="atrasado">Atrasados</SelectItem>
+            <SelectItem value="neutro">Sem dados</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-card">
@@ -117,10 +149,10 @@ function Alunos() {
             {isLoading && (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>
             )}
-            {!isLoading && filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum aluno cadastrado.</td></tr>
+            {!isLoading && pag.pageItems.length === 0 && (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum aluno encontrado.</td></tr>
             )}
-            {filtered.map((a) => (
+            {pag.pageItems.map((a) => (
               <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-4 py-3"><StatusDot status={a.status_pagamento} /></td>
                 <td className="px-4 py-3 font-medium">{a.nome}</td>
@@ -151,6 +183,12 @@ function Alunos() {
             ))}
           </tbody>
         </table>
+        <PaginationBar
+          page={pag.page} totalPages={pag.totalPages} total={pag.total}
+          from={pag.from} to={pag.to} pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
       </div>
 
       <AlunoFormDialog

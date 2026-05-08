@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 import { fmtBRL } from "@/lib/format";
-import { Plus, Trash, Pencil, Check, X } from "lucide-react";
+import { Plus, Trash, Pencil, Check, X, Search } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationBar, usePagination } from "@/components/pagination-bar";
 
 export const Route = createFileRoute("/app/configuracoes")({
   component: () => (
@@ -43,6 +44,14 @@ function Config() {
   const [editDur, setEditDur] = useState("1");
   const [editValor, setEditValor] = useState("");
   const [delPlano, setDelPlano] = useState<Plano | null>(null);
+  const [busca, setBusca] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const planosFiltrados = (planos ?? []).filter((p) =>
+    !busca || p.nome.toLowerCase().includes(busca.toLowerCase()),
+  );
+  const pag = usePagination(planosFiltrados, page, pageSize);
 
   async function addPlano() {
     if (!nome || !valor) return toast.error("Preencha nome e valor");
@@ -95,16 +104,22 @@ function Config() {
             <Button className="self-end" onClick={addPlano}><Plus className="mr-1 h-4 w-4" /> Adicionar</Button>
           </div>
 
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-9" placeholder="Buscar plano…"
+              value={busca} onChange={(e) => { setBusca(e.target.value); setPage(1); }} />
+          </div>
+
           <div className="overflow-hidden rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr><th className="px-3 py-2">Nome</th><th className="px-3 py-2">Duração</th><th className="px-3 py-2">Valor</th><th className="px-3 py-2 w-28"></th></tr>
               </thead>
               <tbody>
-                {(planos ?? []).length === 0 && (
-                  <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Nenhum plano cadastrado.</td></tr>
+                {pag.pageItems.length === 0 && (
+                  <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Nenhum plano encontrado.</td></tr>
                 )}
-                {(planos ?? []).map((p) => {
+                {pag.pageItems.map((p) => {
                   const isEditing = editingId === p.id;
                   return (
                     <tr key={p.id} className="border-t border-border">
@@ -135,7 +150,15 @@ function Config() {
                 })}
               </tbody>
             </table>
+            <PaginationBar
+              page={pag.page} totalPages={pag.totalPages} total={pag.total}
+              from={pag.from} to={pag.to} pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+              pageSizeOptions={[5, 10, 25, 50]}
+            />
           </div>
+
         </CardContent>
       </Card>
 
