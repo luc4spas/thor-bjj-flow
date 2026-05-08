@@ -114,7 +114,24 @@ function UsuariosPage() {
         <NewUserDialog />
       </header>
 
-      <div className="rounded-lg border bg-card">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Buscar por nome ou e-mail…"
+            value={busca} onChange={(e) => { setBusca(e.target.value); setPage(1); }} />
+        </div>
+        <Select value={roleF} onValueChange={(v) => { setRoleF(v as typeof roleF); setPage(1); }}>
+          <SelectTrigger><SelectValue placeholder="Perfil" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os perfis</SelectItem>
+            <SelectItem value="owner">Owner</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="instructor">Instrutor</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="rounded-lg border bg-card overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -128,7 +145,10 @@ function UsuariosPage() {
             {isLoading && (
               <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
             )}
-            {!isLoading && (perfis ?? []).map((p) => {
+            {!isLoading && pag.pageItems.length === 0 && (
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado.</TableCell></TableRow>
+            )}
+            {!isLoading && pag.pageItems.map((p) => {
               const isSelf = p.id === me?.id;
               const canEdit =
                 !isSelf &&
@@ -171,6 +191,12 @@ function UsuariosPage() {
             })}
           </TableBody>
         </Table>
+        <PaginationBar
+          page={pag.page} totalPages={pag.totalPages} total={pag.total}
+          from={pag.from} to={pag.to} pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
       </div>
 
       <ConfirmDialog
