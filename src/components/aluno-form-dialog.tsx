@@ -263,8 +263,11 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
           valor_total: Number(valorTotal),
           dia_vencimento: Number(diaVenc),
           status: "ativo",
+          titular_contrato_id: (isAmigo && titularContratoAmigoId && titularContratoAmigoId !== "__none__")
+            ? titularContratoAmigoId : null,
         });
         if (ec) throw ec;
+
 
         if (isFamilia && titularId) {
           toast.success("Dependente cadastrado — cobrança fica atrelada ao titular");
