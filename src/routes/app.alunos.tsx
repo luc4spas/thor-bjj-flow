@@ -202,6 +202,17 @@ function Alunos() {
         aluno={editing}
         onSaved={() => qc.invalidateQueries({ queryKey: ["alunos-list"] })}
       />
+      <TrocarPlanoDialog
+        open={!!trocarPlano}
+        onOpenChange={(v) => { if (!v) setTrocarPlano(null); }}
+        alunoId={trocarPlano?.id ?? null}
+        alunoNome={trocarPlano?.nome}
+        onSaved={() => {
+          qc.invalidateQueries({ queryKey: ["alunos-list"] });
+          qc.invalidateQueries({ queryKey: ["transacoes"] });
+          qc.invalidateQueries({ queryKey: ["dashboard-financeiro"] });
+        }}
+      />
       <ConfirmDialog
         open={!!deleting}
         onOpenChange={(v) => { if (!v) setDeleting(null); }}
