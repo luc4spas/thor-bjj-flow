@@ -174,6 +174,9 @@ function Alunos() {
                         <DropdownMenuItem onClick={() => { setEditing(a); setOpenForm(true); }}>
                           <Pencil className="mr-2 h-4 w-4" /> Editar
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTrocarPlano(a)}>
+                          <ArrowRightLeft className="mr-2 h-4 w-4" /> Trocar Plano
+                        </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => setDeleting(a)}>
                           <Trash2 className="mr-2 h-4 w-4" /> Excluir
                         </DropdownMenuItem>
