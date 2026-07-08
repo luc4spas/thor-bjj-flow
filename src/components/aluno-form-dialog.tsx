@@ -83,6 +83,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
   const [valorTotal, setValorTotal] = useState("");
   const [diaVenc, setDiaVenc] = useState("10");
   const [titularId, setTitularId] = useState<string>("");
+  const [titularContratoAmigoId, setTitularContratoAmigoId] = useState<string>("");
 
   const { data: planos } = useQuery({
     queryKey: ["planos"],
@@ -93,19 +94,65 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
     },
   });
 
+  // Titulares existentes de Plano Família (alunos que já são titulares de um contrato família ativo)
   const { data: titularesFamilia } = useQuery({
-    queryKey: ["titulares-familia"],
+    queryKey: ["titulares-familia-ativos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id_aluno, aluno:alunos!inner(id,nome,titular_id), plano:planos!inner(tipo)")
+        .eq("status", "ativo")
+        .eq("plano.tipo", "familia");
+      if (error) throw error;
+      const seen = new Set<string>();
+      const out: { id: string; nome: string }[] = [];
+      for (const row of (data ?? []) as Array<{ aluno: { id: string; nome: string; titular_id: string | null } }>) {
+        if (row.aluno && !row.aluno.titular_id && !seen.has(row.aluno.id)) {
+          seen.add(row.aluno.id);
+          out.push({ id: row.aluno.id, nome: row.aluno.nome });
+        }
+      }
+      return out.sort((a, b) => a.nome.localeCompare(b.nome));
+    },
+  });
+
+  // Dependentes já vinculados ao titular selecionado (mostrar quem já está na família)
+  const { data: dependentesDoTitular } = useQuery({
+    queryKey: ["dependentes-do-titular", titularId],
+    enabled: !!titularId && titularId !== "__none__",
     queryFn: async () => {
       const { data, error } = await supabase.from("alunos")
-        .select("id,nome").is("titular_id", null).order("nome");
+        .select("id,nome").eq("titular_id", titularId).order("nome");
       if (error) throw error;
       return data ?? [];
     },
   });
 
+  // Contratos de Plano Amigo ativos, sem par ainda (disponíveis para vincular)
+  const { data: contratosAmigoDisponiveis } = useQuery({
+    queryKey: ["contratos-amigo-disponiveis"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id, titular_contrato_id, aluno:alunos!inner(id,nome), plano:planos!inner(tipo)")
+        .eq("status", "ativo")
+        .eq("plano.tipo", "amigo");
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ id: string; titular_contrato_id: string | null; aluno: { id: string; nome: string } }>;
+      const linkedTargets = new Set(rows.map((r) => r.titular_contrato_id).filter(Boolean) as string[]);
+      // disponível = contrato que não aponta pra outro (é titular) e ninguém aponta pra ele ainda
+      return rows
+        .filter((r) => !r.titular_contrato_id && !linkedTargets.has(r.id))
+        .map((r) => ({ id: r.id, nome: r.aluno.nome }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+    },
+  });
+
   const planoSelecionado = planos?.find((p) => p.id === planoId);
   const isFamilia = planoSelecionado?.tipo === "familia";
+  const isAmigo = planoSelecionado?.tipo === "amigo";
   const isAvista = planoSelecionado?.cobranca === "a_vista";
+
 
   useEffect(() => {
     if (!open) return;
@@ -144,7 +191,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       setTelefone(""); setEmail(""); setCpf(""); setObservacoes("");
       setRua(""); setNumero(""); setBairro(""); setCidade(""); setCep(""); setUf("");
       setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
-      setPlanoId(""); setValorTotal(""); setDiaVenc("10"); setTitularId("");
+      setPlanoId(""); setValorTotal(""); setDiaVenc("10"); setTitularId(""); setTitularContratoAmigoId("");
       setDataInicio(new Date().toISOString().slice(0, 10));
     }
   }, [open, aluno]);
@@ -216,8 +263,11 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
           valor_total: Number(valorTotal),
           dia_vencimento: Number(diaVenc),
           status: "ativo",
+          titular_contrato_id: (isAmigo && titularContratoAmigoId && titularContratoAmigoId !== "__none__")
+            ? titularContratoAmigoId : null,
         });
         if (ec) throw ec;
+
 
         if (isFamilia && titularId) {
           toast.success("Dependente cadastrado — cobrança fica atrelada ao titular");
@@ -325,13 +375,54 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               </Field>
 
               {isFamilia && (
-                <Field label="Titular financeiro (deixe vazio se este aluno for o titular)">
-                  <Select value={titularId} onValueChange={setTitularId}>
-                    <SelectTrigger><SelectValue placeholder="— este aluno é o titular —" /></SelectTrigger>
+                <>
+                  <Field label="Titular financeiro (deixe vazio se este aluno for o titular)">
+                    <Select value={titularId} onValueChange={setTitularId}>
+                      <SelectTrigger><SelectValue placeholder="— este aluno é o titular —" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— este aluno é o titular —</SelectItem>
+                        {titularesFamilia && titularesFamilia.length > 0 && (
+                          <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Famílias existentes
+                          </div>
+                        )}
+                        {titularesFamilia?.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  {titularId && titularId !== "__none__" && (
+                    <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                      <div className="font-medium mb-1">
+                        Participantes da família de{" "}
+                        {titularesFamilia?.find((t) => t.id === titularId)?.nome}:
+                      </div>
+                      {dependentesDoTitular && dependentesDoTitular.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {dependentesDoTitular.map((d) => <li key={d.id}>{d.nome}</li>)}
+                        </ul>
+                      ) : (
+                        <p className="text-muted-foreground">Nenhum dependente ainda — este será o primeiro.</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {isAmigo && (
+                <Field label="Parceiro de treino (vincular a um Plano Amigo existente)">
+                  <Select value={titularContratoAmigoId} onValueChange={setTitularContratoAmigoId}>
+                    <SelectTrigger><SelectValue placeholder="— novo Plano Amigo (sem parceiro ainda) —" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— este aluno é o titular —</SelectItem>
-                      {titularesFamilia?.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                      <SelectItem value="__none__">— novo Plano Amigo (sem parceiro ainda) —</SelectItem>
+                      {contratosAmigoDisponiveis && contratosAmigoDisponiveis.length > 0 && (
+                        <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Aguardando parceiro
+                        </div>
+                      )}
+                      {contratosAmigoDisponiveis?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -339,6 +430,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               )}
 
               <div className="grid grid-cols-3 gap-3">
+
                 <Field label="Data Início"><Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></Field>
                 <Field label={isAvista ? "Valor Total * (à vista)" : "Valor Total *"}>
                   <Input type="number" step="0.01" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} />
