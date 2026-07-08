@@ -99,6 +99,20 @@ function LoginPage() {
             <Button type="submit" className="w-full" disabled={busy}>
               {busy ? "Aguarde…" : "Entrar"}
             </Button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email) return toast.error("Informe seu e-mail acima primeiro");
+                const { error } = await (await import("@/integrations/supabase/client")).supabase.auth
+                  .resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+                if (error) toast.error(error.message);
+                else toast.success("Enviamos um link de recuperação para o seu e-mail.");
+              }}
+              className="w-full text-center text-xs text-muted-foreground hover:text-primary underline"
+            >
+              Esqueci minha senha
+            </button>
           </form>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
