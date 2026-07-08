@@ -191,7 +191,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       setTelefone(""); setEmail(""); setCpf(""); setObservacoes("");
       setRua(""); setNumero(""); setBairro(""); setCidade(""); setCep(""); setUf("");
       setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
-      setPlanoId(""); setValorTotal(""); setDiaVenc("10"); setTitularId("");
+      setPlanoId(""); setValorTotal(""); setDiaVenc("10"); setTitularId(""); setTitularContratoAmigoId("");
       setDataInicio(new Date().toISOString().slice(0, 10));
     }
   }, [open, aluno]);
