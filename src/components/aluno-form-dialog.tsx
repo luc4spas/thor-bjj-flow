@@ -375,13 +375,54 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               </Field>
 
               {isFamilia && (
-                <Field label="Titular financeiro (deixe vazio se este aluno for o titular)">
-                  <Select value={titularId} onValueChange={setTitularId}>
-                    <SelectTrigger><SelectValue placeholder="— este aluno é o titular —" /></SelectTrigger>
+                <>
+                  <Field label="Titular financeiro (deixe vazio se este aluno for o titular)">
+                    <Select value={titularId} onValueChange={setTitularId}>
+                      <SelectTrigger><SelectValue placeholder="— este aluno é o titular —" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— este aluno é o titular —</SelectItem>
+                        {titularesFamilia && titularesFamilia.length > 0 && (
+                          <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Famílias existentes
+                          </div>
+                        )}
+                        {titularesFamilia?.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  {titularId && titularId !== "__none__" && (
+                    <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                      <div className="font-medium mb-1">
+                        Participantes da família de{" "}
+                        {titularesFamilia?.find((t) => t.id === titularId)?.nome}:
+                      </div>
+                      {dependentesDoTitular && dependentesDoTitular.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {dependentesDoTitular.map((d) => <li key={d.id}>{d.nome}</li>)}
+                        </ul>
+                      ) : (
+                        <p className="text-muted-foreground">Nenhum dependente ainda — este será o primeiro.</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {isAmigo && (
+                <Field label="Parceiro de treino (vincular a um Plano Amigo existente)">
+                  <Select value={titularContratoAmigoId} onValueChange={setTitularContratoAmigoId}>
+                    <SelectTrigger><SelectValue placeholder="— novo Plano Amigo (sem parceiro ainda) —" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— este aluno é o titular —</SelectItem>
-                      {titularesFamilia?.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                      <SelectItem value="__none__">— novo Plano Amigo (sem parceiro ainda) —</SelectItem>
+                      {contratosAmigoDisponiveis && contratosAmigoDisponiveis.length > 0 && (
+                        <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Aguardando parceiro
+                        </div>
+                      )}
+                      {contratosAmigoDisponiveis?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -389,6 +430,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               )}
 
               <div className="grid grid-cols-3 gap-3">
+
                 <Field label="Data Início"><Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></Field>
                 <Field label={isAvista ? "Valor Total * (à vista)" : "Valor Total *"}>
                   <Input type="number" step="0.01" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} />
