@@ -38,6 +38,7 @@ function Alunos() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<AlunoEditPayload | null>(null);
   const [deleting, setDeleting] = useState<AlunoRow | null>(null);
+  const [trocarPlano, setTrocarPlano] = useState<AlunoRow | null>(null);
   const [filter, setFilter] = useState("");
   const [faixaF, setFaixaF] = useState<string>("todas");
   const [statusF, setStatusF] = useState<"todos" | "ok" | "atrasado" | "neutro">("todos");
