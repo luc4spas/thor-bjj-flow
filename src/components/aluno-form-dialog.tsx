@@ -192,7 +192,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         endereco_rua: rua || null, endereco_numero: numero || null,
         endereco_bairro: bairro || null, endereco_cidade: cidade || null,
         endereco_cep: cep || null, endereco_uf: uf || null,
-        titular_id: (isFamilia && titularId) ? titularId : (aluno?.titular_id ?? null),
+        titular_id: (isFamilia && titularId && titularId !== "__none__") ? titularId : (aluno?.titular_id ?? null),
       };
 
       if (isEdit) {
