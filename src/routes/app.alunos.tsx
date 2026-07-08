@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 import { fmtDate } from "@/lib/format";
 import { AlunoFormDialog, type AlunoEditPayload } from "@/components/aluno-form-dialog";
+import { TrocarPlanoDialog } from "@/components/trocar-plano-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
