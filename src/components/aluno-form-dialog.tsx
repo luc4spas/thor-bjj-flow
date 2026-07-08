@@ -4,12 +4,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 
 const FAIXAS = ["Branca", "Cinza", "Amarela", "Laranja", "Verde", "Azul", "Roxa", "Marrom", "Preta"];
+const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+const DIAS_VENC = ["10", "20", "30"];
 
 export interface AlunoEditPayload {
   id: string;
@@ -21,6 +24,14 @@ export interface AlunoEditPayload {
   email: string | null;
   cpf: string | null;
   id_responsavel: string | null;
+  observacoes?: string | null;
+  endereco_rua?: string | null;
+  endereco_numero?: string | null;
+  endereco_bairro?: string | null;
+  endereco_cidade?: string | null;
+  endereco_cep?: string | null;
+  endereco_uf?: string | null;
+  titular_id?: string | null;
 }
 
 function maskCPF(v: string) {
@@ -28,6 +39,9 @@ function maskCPF(v: string) {
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+function maskCEP(v: string) {
+  return v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 }
 
 interface Props {
@@ -50,6 +64,14 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  // Endereço
+  const [rua, setRua] = useState("");
+  const [numero, setNumero] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [cep, setCep] = useState("");
+  const [uf, setUf] = useState("");
   // Responsavel
   const [respNome, setRespNome] = useState("");
   const [respCpf, setRespCpf] = useState("");
@@ -60,6 +82,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
   const [valorTotal, setValorTotal] = useState("");
   const [diaVenc, setDiaVenc] = useState("10");
+  const [titularId, setTitularId] = useState<string>("");
 
   const { data: planos } = useQuery({
     queryKey: ["planos"],
@@ -69,6 +92,20 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       return data ?? [];
     },
   });
+
+  const { data: titularesFamilia } = useQuery({
+    queryKey: ["titulares-familia"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("alunos")
+        .select("id,nome").is("titular_id", null).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const planoSelecionado = planos?.find((p) => p.id === planoId);
+  const isFamilia = planoSelecionado?.tipo === "familia";
+  const isAvista = planoSelecionado?.cobranca === "a_vista";
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +118,14 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       setTelefone(aluno.telefone ?? "");
       setEmail(aluno.email ?? "");
       setCpf(aluno.cpf ? maskCPF(aluno.cpf) : "");
-      // Carregar responsável se houver
+      setObservacoes(aluno.observacoes ?? "");
+      setRua(aluno.endereco_rua ?? "");
+      setNumero(aluno.endereco_numero ?? "");
+      setBairro(aluno.endereco_bairro ?? "");
+      setCidade(aluno.endereco_cidade ?? "");
+      setCep(aluno.endereco_cep ? maskCEP(aluno.endereco_cep) : "");
+      setUf(aluno.endereco_uf ?? "");
+      setTitularId(aluno.titular_id ?? "");
       if (aluno.id_responsavel) {
         supabase.from("responsaveis").select("*").eq("id", aluno.id_responsavel).maybeSingle()
           .then(({ data }) => {
@@ -97,8 +141,10 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
       }
     } else {
       setNome(""); setDataNasc(""); setFaixa("Branca"); setGraus("0");
-      setTelefone(""); setEmail(""); setCpf(""); setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
-      setPlanoId(""); setValorTotal(""); setDiaVenc("10");
+      setTelefone(""); setEmail(""); setCpf(""); setObservacoes("");
+      setRua(""); setNumero(""); setBairro(""); setCidade(""); setCep(""); setUf("");
+      setRespNome(""); setRespCpf(""); setRespTel(""); setRespEmail("");
+      setPlanoId(""); setValorTotal(""); setDiaVenc("10"); setTitularId("");
       setDataInicio(new Date().toISOString().slice(0, 10));
     }
   }, [open, aluno]);
@@ -115,6 +161,9 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
     if (!isEdit) {
       if (!planoId) return toast.error("Selecione um plano (contrato é obrigatório)");
       if (!valorTotal) return toast.error("Informe o valor total do contrato");
+      if (isFamilia && !titularId) {
+        // Sem titular = está criando o titular; ok
+      }
     }
 
     setBusy(true);
@@ -135,18 +184,24 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         }
       }
 
+      const payloadAluno = {
+        nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
+        telefone: telefone || null, email: email || null, cpf: cpf || null,
+        id_responsavel: idResponsavel,
+        observacoes: observacoes || null,
+        endereco_rua: rua || null, endereco_numero: numero || null,
+        endereco_bairro: bairro || null, endereco_cidade: cidade || null,
+        endereco_cep: cep || null, endereco_uf: uf || null,
+        titular_id: (isFamilia && titularId) ? titularId : (aluno?.titular_id ?? null),
+      };
+
       if (isEdit) {
-        const { error } = await supabase.from("alunos").update({
-          nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
-          telefone: telefone || null, email: email || null, cpf: cpf || null, id_responsavel: idResponsavel,
-        }).eq("id", aluno!.id);
+        const { error } = await supabase.from("alunos").update(payloadAluno).eq("id", aluno!.id);
         if (error) throw error;
         toast.success("Aluno atualizado");
       } else {
-        const { data: alunoNovo, error: ea } = await supabase.from("alunos").insert({
-          nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
-          telefone: telefone || null, email: email || null, cpf: cpf || null, id_responsavel: idResponsavel,
-        }).select("id").single();
+        const { data: alunoNovo, error: ea } = await supabase.from("alunos")
+          .insert(payloadAluno).select("id").single();
         if (ea) throw ea;
 
         const plano = planos?.find((p) => p.id === planoId)!;
@@ -163,7 +218,14 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
           status: "ativo",
         });
         if (ec) throw ec;
-        toast.success("Aluno cadastrado e parcelas geradas!");
+
+        if (isFamilia && titularId) {
+          toast.success("Dependente cadastrado — cobrança fica atrelada ao titular");
+        } else if (isAvista) {
+          toast.success("Aluno cadastrado — cobrança única gerada (pagamento à vista)");
+        } else {
+          toast.success("Aluno cadastrado e parcelas geradas!");
+        }
       }
 
       onSaved();
@@ -175,14 +237,15 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar Aluno" : "Novo Aluno"}</DialogTitle>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className={isEdit ? "grid w-full grid-cols-2" : "grid w-full grid-cols-3"}>
-            <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
+          <TabsList className={isEdit ? "grid w-full grid-cols-3" : "grid w-full grid-cols-4"}>
+            <TabsTrigger value="dados">Dados</TabsTrigger>
+            <TabsTrigger value="endereco">Endereço *</TabsTrigger>
             <TabsTrigger value="resp">Responsável</TabsTrigger>
             {!isEdit && <TabsTrigger value="contrato">Contrato *</TabsTrigger>}
           </TabsList>
@@ -206,6 +269,33 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               </Field>
               <Field label="Graus"><Input type="number" min={0} max={4} value={graus} onChange={(e) => setGraus(e.target.value)} /></Field>
             </div>
+            <Field label="Observações internas">
+              <Textarea rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)}
+                placeholder="Anotações da equipe (não visível ao aluno)" />
+            </Field>
+          </TabsContent>
+
+          <TabsContent value="endereco" className="space-y-4 pt-4">
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              ⚠ Necessário para emissão de Nota Fiscal
+            </p>
+            <div className="grid grid-cols-[1fr_120px] gap-3">
+              <Field label="Rua / Logradouro"><Input value={rua} onChange={(e) => setRua(e.target.value)} /></Field>
+              <Field label="Número"><Input value={numero} onChange={(e) => setNumero(e.target.value)} /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Bairro"><Input value={bairro} onChange={(e) => setBairro(e.target.value)} /></Field>
+              <Field label="CEP"><Input value={cep} onChange={(e) => setCep(maskCEP(e.target.value))} placeholder="00000-000" inputMode="numeric" /></Field>
+            </div>
+            <div className="grid grid-cols-[1fr_100px] gap-3">
+              <Field label="Cidade"><Input value={cidade} onChange={(e) => setCidade(e.target.value)} /></Field>
+              <Field label="UF">
+                <Select value={uf} onValueChange={setUf}>
+                  <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                  <SelectContent>{UFS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+            </div>
           </TabsContent>
 
           <TabsContent value="resp" className="space-y-4 pt-4">
@@ -227,17 +317,52 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
                     {planos?.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nome} — {p.duracao_meses}m — R$ {Number(p.valor_padrao).toFixed(2)}
+                        {p.cobranca === "a_vista" ? " (à vista)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </Field>
+
+              {isFamilia && (
+                <Field label="Titular financeiro (deixe vazio se este aluno for o titular)">
+                  <Select value={titularId} onValueChange={setTitularId}>
+                    <SelectTrigger><SelectValue placeholder="— este aluno é o titular —" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— este aluno é o titular —</SelectItem>
+                      {titularesFamilia?.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Data Início"><Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></Field>
-                <Field label="Valor Total *"><Input type="number" step="0.01" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} /></Field>
-                <Field label="Dia Vencimento"><Input type="number" min={1} max={28} value={diaVenc} onChange={(e) => setDiaVenc(e.target.value)} /></Field>
+                <Field label={isAvista ? "Valor Total * (à vista)" : "Valor Total *"}>
+                  <Input type="number" step="0.01" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} />
+                </Field>
+                <Field label="Dia Vencimento">
+                  <Select value={diaVenc} onValueChange={setDiaVenc}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{DIAS_VENC.map((d) => <SelectItem key={d} value={d}>Dia {d}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field>
               </div>
-              <p className="text-xs text-muted-foreground">As parcelas mensais serão geradas automaticamente conforme a duração do plano.</p>
+              {isAvista ? (
+                <p className="text-xs text-muted-foreground">
+                  Plano à vista: será criada <b>uma única cobrança</b> com o valor total.
+                </p>
+              ) : isFamilia && titularId && titularId !== "__none__" ? (
+                <p className="text-xs text-muted-foreground">
+                  Dependente de Plano Família: <b>não gera cobrança própria</b> — o titular paga.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Plano recorrente: parcelas mensais geradas automaticamente conforme a duração.
+                </p>
+              )}
             </TabsContent>
           )}
         </Tabs>
