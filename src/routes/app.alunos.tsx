@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 import { fmtDate } from "@/lib/format";
 import { AlunoFormDialog, type AlunoEditPayload } from "@/components/aluno-form-dialog";
+import { TrocarPlanoDialog } from "@/components/trocar-plano-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -37,6 +38,7 @@ function Alunos() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<AlunoEditPayload | null>(null);
   const [deleting, setDeleting] = useState<AlunoRow | null>(null);
+  const [trocarPlano, setTrocarPlano] = useState<AlunoRow | null>(null);
   const [filter, setFilter] = useState("");
   const [faixaF, setFaixaF] = useState<string>("todas");
   const [statusF, setStatusF] = useState<"todos" | "ok" | "atrasado" | "neutro">("todos");
@@ -48,7 +50,7 @@ function Alunos() {
     queryFn: async (): Promise<AlunoRow[]> => {
       const { data: alunosData, error } = await supabase
         .from("alunos")
-        .select("id,nome,faixa,graus,data_nascimento,telefone,email,cpf,id_responsavel")
+        .select("id,nome,faixa,graus,data_nascimento,telefone,email,cpf,id_responsavel,observacoes,endereco_rua,endereco_numero,endereco_bairro,endereco_cidade,endereco_cep,endereco_uf,titular_id")
         .order("nome");
       if (error) throw error;
 
@@ -172,6 +174,9 @@ function Alunos() {
                         <DropdownMenuItem onClick={() => { setEditing(a); setOpenForm(true); }}>
                           <Pencil className="mr-2 h-4 w-4" /> Editar
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTrocarPlano(a)}>
+                          <ArrowRightLeft className="mr-2 h-4 w-4" /> Trocar Plano
+                        </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => setDeleting(a)}>
                           <Trash2 className="mr-2 h-4 w-4" /> Excluir
                         </DropdownMenuItem>
@@ -196,6 +201,17 @@ function Alunos() {
         onOpenChange={(v) => { setOpenForm(v); if (!v) setEditing(null); }}
         aluno={editing}
         onSaved={() => qc.invalidateQueries({ queryKey: ["alunos-list"] })}
+      />
+      <TrocarPlanoDialog
+        open={!!trocarPlano}
+        onOpenChange={(v) => { if (!v) setTrocarPlano(null); }}
+        alunoId={trocarPlano?.id ?? null}
+        alunoNome={trocarPlano?.nome}
+        onSaved={() => {
+          qc.invalidateQueries({ queryKey: ["alunos-list"] });
+          qc.invalidateQueries({ queryKey: ["transacoes"] });
+          qc.invalidateQueries({ queryKey: ["dashboard-financeiro"] });
+        }}
       />
       <ConfirmDialog
         open={!!deleting}

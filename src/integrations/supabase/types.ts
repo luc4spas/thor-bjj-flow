@@ -20,36 +20,60 @@ export type Database = {
           created_at: string
           data_nascimento: string | null
           email: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
           faixa: string
           graus: number
           id: string
           id_responsavel: string | null
           nome: string
+          observacoes: string | null
           telefone: string | null
+          titular_id: string | null
         }
         Insert: {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           faixa?: string
           graus?: number
           id?: string
           id_responsavel?: string | null
           nome: string
+          observacoes?: string | null
           telefone?: string | null
+          titular_id?: string | null
         }
         Update: {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           faixa?: string
           graus?: number
           id?: string
           id_responsavel?: string | null
           nome?: string
+          observacoes?: string | null
           telefone?: string | null
+          titular_id?: string | null
         }
         Relationships: [
           {
@@ -57,6 +81,13 @@ export type Database = {
             columns: ["id_responsavel"]
             isOneToOne: false
             referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_titular_id_fkey"
+            columns: ["titular_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
             referencedColumns: ["id"]
           },
         ]
@@ -71,6 +102,7 @@ export type Database = {
           id_aluno: string
           id_plano: string
           status: Database["public"]["Enums"]["contrato_status"]
+          titular_contrato_id: string | null
           valor_total: number
         }
         Insert: {
@@ -82,6 +114,7 @@ export type Database = {
           id_aluno: string
           id_plano: string
           status?: Database["public"]["Enums"]["contrato_status"]
+          titular_contrato_id?: string | null
           valor_total: number
         }
         Update: {
@@ -93,6 +126,7 @@ export type Database = {
           id_aluno?: string
           id_plano?: string
           status?: Database["public"]["Enums"]["contrato_status"]
+          titular_contrato_id?: string | null
           valor_total?: number
         }
         Relationships: [
@@ -108,6 +142,13 @@ export type Database = {
             columns: ["id_plano"]
             isOneToOne: false
             referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_titular_contrato_id_fkey"
+            columns: ["titular_contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
             referencedColumns: ["id"]
           },
         ]
@@ -138,24 +179,33 @@ export type Database = {
       }
       planos: {
         Row: {
+          cobranca: Database["public"]["Enums"]["plano_cobranca"]
           created_at: string
           duracao_meses: number
           id: string
+          max_dependentes: number
           nome: string
+          tipo: Database["public"]["Enums"]["plano_tipo"]
           valor_padrao: number
         }
         Insert: {
+          cobranca?: Database["public"]["Enums"]["plano_cobranca"]
           created_at?: string
           duracao_meses: number
           id?: string
+          max_dependentes?: number
           nome: string
+          tipo?: Database["public"]["Enums"]["plano_tipo"]
           valor_padrao: number
         }
         Update: {
+          cobranca?: Database["public"]["Enums"]["plano_cobranca"]
           created_at?: string
           duracao_meses?: number
           id?: string
+          max_dependentes?: number
           nome?: string
+          tipo?: Database["public"]["Enums"]["plano_tipo"]
           valor_padrao?: number
         }
         Relationships: []
@@ -276,6 +326,8 @@ export type Database = {
         | "boleto"
         | "transferencia"
         | "outro"
+      plano_cobranca: "recorrente" | "a_vista"
+      plano_tipo: "mensal" | "semestral" | "anual" | "amigo" | "familia"
       transacao_status: "pago" | "pendente"
       transacao_tipo: "receita" | "despesa"
     }
@@ -416,6 +468,8 @@ export const Constants = {
         "transferencia",
         "outro",
       ],
+      plano_cobranca: ["recorrente", "a_vista"],
+      plano_tipo: ["mensal", "semestral", "anual", "amigo", "familia"],
       transacao_status: ["pago", "pendente"],
       transacao_tipo: ["receita", "despesa"],
     },
