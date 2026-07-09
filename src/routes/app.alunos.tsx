@@ -58,6 +58,18 @@ function Alunos() {
         .from("transacoes")
         .select("id_aluno,status,data_vencimento,tipo");
 
+      // mapa de titular -> lista de dependentes
+      const depMap = new Map<string, string[]>();
+      const nomeById = new Map<string, string>();
+      (alunosData ?? []).forEach((a) => nomeById.set(a.id, a.nome));
+      (alunosData ?? []).forEach((a) => {
+        if (a.titular_id) {
+          const arr = depMap.get(a.titular_id) ?? [];
+          arr.push(a.nome);
+          depMap.set(a.titular_id, arr);
+        }
+      });
+
       const today = new Date().toISOString().slice(0, 10);
       return (alunosData ?? []).map((a) => {
         const ts = (transData ?? []).filter((t) => t.id_aluno === a.id && t.tipo === "receita");
@@ -66,7 +78,9 @@ function Alunos() {
           const atrasado = ts.some((t) => t.status === "pendente" && t.data_vencimento < today);
           status = atrasado ? "atrasado" : "ok";
         }
-        return { ...a, status_pagamento: status };
+        const dependentes = depMap.get(a.id) ?? [];
+        const titularNome = a.titular_id ? nomeById.get(a.titular_id) ?? null : null;
+        return { ...a, status_pagamento: status, dependentes, titularNome };
       });
     },
   });
