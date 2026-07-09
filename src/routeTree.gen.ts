@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppUsuariosRouteImport } from './routes/app.usuarios'
 import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
+import { Route as AppFrequenciaRouteImport } from './routes/app.frequencia'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
@@ -57,6 +58,11 @@ const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFrequenciaRoute = AppFrequenciaRouteImport.update({
+  id: '/frequencia',
+  path: '/frequencia',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/frequencia': typeof AppFrequenciaRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/usuarios': typeof AppUsuariosRoute
   '/app/': typeof AppIndexRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/frequencia': typeof AppFrequenciaRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/usuarios': typeof AppUsuariosRoute
   '/app': typeof AppIndexRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/frequencia': typeof AppFrequenciaRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/usuarios': typeof AppUsuariosRoute
   '/app/': typeof AppIndexRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/app/configuracoes'
     | '/app/dashboard'
     | '/app/financeiro'
+    | '/app/frequencia'
     | '/app/relatorios'
     | '/app/usuarios'
     | '/app/'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/app/configuracoes'
     | '/app/dashboard'
     | '/app/financeiro'
+    | '/app/frequencia'
     | '/app/relatorios'
     | '/app/usuarios'
     | '/app'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/app/configuracoes'
     | '/app/dashboard'
     | '/app/financeiro'
+    | '/app/frequencia'
     | '/app/relatorios'
     | '/app/usuarios'
     | '/app/'
@@ -228,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRelatoriosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/frequencia': {
+      id: '/app/frequencia'
+      path: '/frequencia'
+      fullPath: '/app/frequencia'
+      preLoaderRoute: typeof AppFrequenciaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/financeiro': {
       id: '/app/financeiro'
       path: '/financeiro'
@@ -271,6 +290,7 @@ interface AppRouteChildren {
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
+  AppFrequenciaRoute: typeof AppFrequenciaRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -281,6 +301,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
+  AppFrequenciaRoute: AppFrequenciaRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppIndexRoute: AppIndexRoute,
