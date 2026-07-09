@@ -173,7 +173,27 @@ function Alunos() {
             {pag.pageItems.map((a) => (
               <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-4 py-3"><StatusDot status={a.status_pagamento} /></td>
-                <td className="px-4 py-3 font-medium">{a.nome}</td>
+                <td className="px-4 py-3 font-medium">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span>{a.nome}</span>
+                    {a.dependentes.length > 0 && (
+                      <span
+                        className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                        title={`Dependentes: ${a.dependentes.join(", ")}`}
+                      >
+                        Titular · {a.dependentes.length}
+                      </span>
+                    )}
+                    {a.titularNome && (
+                      <span
+                        className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                        title={`Titular: ${a.titularNome}`}
+                      >
+                        Dep. de {a.titularNome}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3">{a.faixa}</td>
                 <td className="px-4 py-3">{a.graus}</td>
                 <td className="px-4 py-3">{fmtDate(a.data_nascimento)}</td>
