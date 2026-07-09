@@ -330,11 +330,12 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className={isEdit ? "grid w-full grid-cols-3" : "grid w-full grid-cols-4"}>
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dados">Dados</TabsTrigger>
             <TabsTrigger value="endereco">Endereço *</TabsTrigger>
             <TabsTrigger value="resp">Responsável</TabsTrigger>
             {!isEdit && <TabsTrigger value="contrato">Contrato *</TabsTrigger>}
+            {isEdit && <TabsTrigger value="vinculos">Vínculos</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="dados" className="space-y-4 pt-4">
