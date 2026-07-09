@@ -249,6 +249,10 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         }
       }
 
+      const titularIdFinal = isEdit
+        ? (editIsFamilia ? (titularId && titularId !== "__none__" ? titularId : null) : (aluno?.titular_id ?? null))
+        : ((isFamilia && titularId && titularId !== "__none__") ? titularId : null);
+
       const payloadAluno = {
         nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
         telefone: telefone || null, email: email || null, cpf: cpf || null,
@@ -257,12 +261,21 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         endereco_rua: rua || null, endereco_numero: numero || null,
         endereco_bairro: bairro || null, endereco_cidade: cidade || null,
         endereco_cep: cep || null, endereco_uf: uf || null,
-        titular_id: (isFamilia && titularId && titularId !== "__none__") ? titularId : (aluno?.titular_id ?? null),
+        titular_id: titularIdFinal,
       };
 
       if (isEdit) {
         const { error } = await supabase.from("alunos").update(payloadAluno).eq("id", aluno!.id);
         if (error) throw error;
+        // atualiza vínculo de amigo no contrato ativo
+        if (editIsAmigo && contratoAtual?.id) {
+          const novoTitularContrato = titularContratoAmigoId && titularContratoAmigoId !== "__none__"
+            ? titularContratoAmigoId : null;
+          const { error: eu } = await supabase.from("contratos")
+            .update({ titular_contrato_id: novoTitularContrato })
+            .eq("id", contratoAtual.id);
+          if (eu) throw eu;
+        }
         toast.success("Aluno atualizado");
       } else {
         const { data: alunoNovo, error: ea } = await supabase.from("alunos")
