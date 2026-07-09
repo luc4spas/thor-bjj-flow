@@ -221,6 +221,12 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
     }
   }, [planoId, planos, isEdit, valorTotal]);
 
+  useEffect(() => {
+    if (isEdit && contratoAtual?.titular_contrato_id) {
+      setTitularContratoAmigoId(contratoAtual.titular_contrato_id);
+    }
+  }, [isEdit, contratoAtual]);
+
   async function salvar() {
     if (!nome.trim()) return toast.error("Informe o nome do aluno");
     if (!isEdit) {
