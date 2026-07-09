@@ -28,6 +28,8 @@ export const Route = createFileRoute("/app/alunos")({
 
 interface AlunoRow extends AlunoEditPayload {
   status_pagamento: "ok" | "atrasado" | "neutro";
+  dependentes: string[];
+  titularNome: string | null;
 }
 
 function Alunos() {
