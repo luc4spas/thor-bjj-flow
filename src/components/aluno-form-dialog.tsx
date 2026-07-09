@@ -495,6 +495,87 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               )}
             </TabsContent>
           )}
+
+          {isEdit && (
+            <TabsContent value="vinculos" className="space-y-4 pt-4">
+              {!contratoAtual ? (
+                <p className="text-sm text-muted-foreground">
+                  Este aluno não possui contrato ativo. Vínculos de Família/Amigo dependem de um contrato ativo.
+                </p>
+              ) : (
+                <>
+                  <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                    <div className="font-medium">Contrato ativo</div>
+                    <div className="text-muted-foreground">
+                      Plano: {(contratoAtual.plano as { nome?: string })?.nome} — tipo{" "}
+                      <b>{(contratoAtual.plano as { tipo?: string })?.tipo}</b>
+                    </div>
+                  </div>
+
+                  {editIsFamilia && (
+                    <>
+                      <Field label="Titular financeiro (deixe vazio se este aluno for o titular)">
+                        <Select value={titularId || "__none__"} onValueChange={setTitularId}>
+                          <SelectTrigger><SelectValue placeholder="— este aluno é o titular —" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— este aluno é o titular —</SelectItem>
+                            {titularesFamilia
+                              ?.filter((t) => t.id !== aluno?.id)
+                              .map((t) => (
+                                <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      {titularId && titularId !== "__none__" && (
+                        <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                          <div className="font-medium mb-1">
+                            Participantes da família de{" "}
+                            {titularesFamilia?.find((t) => t.id === titularId)?.nome}:
+                          </div>
+                          {dependentesDoTitular && dependentesDoTitular.length > 0 ? (
+                            <ul className="list-disc list-inside space-y-0.5">
+                              {dependentesDoTitular.map((d) => <li key={d.id}>{d.nome}</li>)}
+                            </ul>
+                          ) : (
+                            <p className="text-muted-foreground">Nenhum dependente ainda.</p>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Ao vincular este aluno a um titular, ele deixa de gerar cobrança própria — o titular passa a pagar.
+                      </p>
+                    </>
+                  )}
+
+                  {editIsAmigo && (
+                    <Field label="Parceiro de treino (vincular a um Plano Amigo existente)">
+                      <Select
+                        value={titularContratoAmigoId || "__none__"}
+                        onValueChange={setTitularContratoAmigoId}
+                      >
+                        <SelectTrigger><SelectValue placeholder="— sem parceiro ainda —" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— sem parceiro ainda —</SelectItem>
+                          {contratosAmigoDisponiveis
+                            ?.filter((c) => c.id !== contratoAtual.id)
+                            .map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  )}
+
+                  {!editIsFamilia && !editIsAmigo && (
+                    <p className="text-sm text-muted-foreground">
+                      O contrato atual não é de Família nem Amigo. Para alterar, use "Trocar plano" na lista de alunos.
+                    </p>
+                  )}
+                </>
+              )}
+            </TabsContent>
+          )}
         </Tabs>
 
         <DialogFooter>
