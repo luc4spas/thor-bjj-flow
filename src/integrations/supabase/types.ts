@@ -92,6 +92,41 @@ export type Database = {
           },
         ]
       }
+      checkins: {
+        Row: {
+          created_at: string
+          data_hora: string
+          id: string
+          id_aluno: string
+          observacao: string | null
+          origem: string
+        }
+        Insert: {
+          created_at?: string
+          data_hora?: string
+          id?: string
+          id_aluno: string
+          observacao?: string | null
+          origem?: string
+        }
+        Update: {
+          created_at?: string
+          data_hora?: string
+          id?: string
+          id_aluno?: string
+          observacao?: string | null
+          origem?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratos: {
         Row: {
           created_at: string

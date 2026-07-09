@@ -153,6 +153,24 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
   const isAmigo = planoSelecionado?.tipo === "amigo";
   const isAvista = planoSelecionado?.cobranca === "a_vista";
 
+  // Contrato ativo do aluno em edição (para permitir vincular a família/amigo)
+  const { data: contratoAtual } = useQuery({
+    queryKey: ["contrato-atual", aluno?.id],
+    enabled: !!aluno?.id && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id, titular_contrato_id, id_plano, plano:planos!inner(tipo,nome)")
+        .eq("id_aluno", aluno!.id)
+        .eq("status", "ativo")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const editIsFamilia = (contratoAtual?.plano as { tipo?: string } | undefined)?.tipo === "familia";
+  const editIsAmigo = (contratoAtual?.plano as { tipo?: string } | undefined)?.tipo === "amigo";
+
 
   useEffect(() => {
     if (!open) return;
@@ -203,6 +221,12 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
     }
   }, [planoId, planos, isEdit, valorTotal]);
 
+  useEffect(() => {
+    if (isEdit && contratoAtual?.titular_contrato_id) {
+      setTitularContratoAmigoId(contratoAtual.titular_contrato_id);
+    }
+  }, [isEdit, contratoAtual]);
+
   async function salvar() {
     if (!nome.trim()) return toast.error("Informe o nome do aluno");
     if (!isEdit) {
@@ -231,6 +255,10 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         }
       }
 
+      const titularIdFinal = isEdit
+        ? (editIsFamilia ? (titularId && titularId !== "__none__" ? titularId : null) : (aluno?.titular_id ?? null))
+        : ((isFamilia && titularId && titularId !== "__none__") ? titularId : null);
+
       const payloadAluno = {
         nome, data_nascimento: dataNasc || null, faixa, graus: Number(graus),
         telefone: telefone || null, email: email || null, cpf: cpf || null,
@@ -239,12 +267,21 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         endereco_rua: rua || null, endereco_numero: numero || null,
         endereco_bairro: bairro || null, endereco_cidade: cidade || null,
         endereco_cep: cep || null, endereco_uf: uf || null,
-        titular_id: (isFamilia && titularId && titularId !== "__none__") ? titularId : (aluno?.titular_id ?? null),
+        titular_id: titularIdFinal,
       };
 
       if (isEdit) {
         const { error } = await supabase.from("alunos").update(payloadAluno).eq("id", aluno!.id);
         if (error) throw error;
+        // atualiza vínculo de amigo no contrato ativo
+        if (editIsAmigo && contratoAtual?.id) {
+          const novoTitularContrato = titularContratoAmigoId && titularContratoAmigoId !== "__none__"
+            ? titularContratoAmigoId : null;
+          const { error: eu } = await supabase.from("contratos")
+            .update({ titular_contrato_id: novoTitularContrato })
+            .eq("id", contratoAtual.id);
+          if (eu) throw eu;
+        }
         toast.success("Aluno atualizado");
       } else {
         const { data: alunoNovo, error: ea } = await supabase.from("alunos")
@@ -293,11 +330,12 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className={isEdit ? "grid w-full grid-cols-3" : "grid w-full grid-cols-4"}>
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dados">Dados</TabsTrigger>
             <TabsTrigger value="endereco">Endereço *</TabsTrigger>
             <TabsTrigger value="resp">Responsável</TabsTrigger>
             {!isEdit && <TabsTrigger value="contrato">Contrato *</TabsTrigger>}
+            {isEdit && <TabsTrigger value="vinculos">Vínculos</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="dados" className="space-y-4 pt-4">
@@ -454,6 +492,87 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
                 <p className="text-xs text-muted-foreground">
                   Plano recorrente: parcelas mensais geradas automaticamente conforme a duração.
                 </p>
+              )}
+            </TabsContent>
+          )}
+
+          {isEdit && (
+            <TabsContent value="vinculos" className="space-y-4 pt-4">
+              {!contratoAtual ? (
+                <p className="text-sm text-muted-foreground">
+                  Este aluno não possui contrato ativo. Vínculos de Família/Amigo dependem de um contrato ativo.
+                </p>
+              ) : (
+                <>
+                  <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                    <div className="font-medium">Contrato ativo</div>
+                    <div className="text-muted-foreground">
+                      Plano: {(contratoAtual.plano as { nome?: string })?.nome} — tipo{" "}
+                      <b>{(contratoAtual.plano as { tipo?: string })?.tipo}</b>
+                    </div>
+                  </div>
+
+                  {editIsFamilia && (
+                    <>
+                      <Field label="Titular financeiro (deixe vazio se este aluno for o titular)">
+                        <Select value={titularId || "__none__"} onValueChange={setTitularId}>
+                          <SelectTrigger><SelectValue placeholder="— este aluno é o titular —" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— este aluno é o titular —</SelectItem>
+                            {titularesFamilia
+                              ?.filter((t) => t.id !== aluno?.id)
+                              .map((t) => (
+                                <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      {titularId && titularId !== "__none__" && (
+                        <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                          <div className="font-medium mb-1">
+                            Participantes da família de{" "}
+                            {titularesFamilia?.find((t) => t.id === titularId)?.nome}:
+                          </div>
+                          {dependentesDoTitular && dependentesDoTitular.length > 0 ? (
+                            <ul className="list-disc list-inside space-y-0.5">
+                              {dependentesDoTitular.map((d) => <li key={d.id}>{d.nome}</li>)}
+                            </ul>
+                          ) : (
+                            <p className="text-muted-foreground">Nenhum dependente ainda.</p>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Ao vincular este aluno a um titular, ele deixa de gerar cobrança própria — o titular passa a pagar.
+                      </p>
+                    </>
+                  )}
+
+                  {editIsAmigo && (
+                    <Field label="Parceiro de treino (vincular a um Plano Amigo existente)">
+                      <Select
+                        value={titularContratoAmigoId || "__none__"}
+                        onValueChange={setTitularContratoAmigoId}
+                      >
+                        <SelectTrigger><SelectValue placeholder="— sem parceiro ainda —" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— sem parceiro ainda —</SelectItem>
+                          {contratosAmigoDisponiveis
+                            ?.filter((c) => c.id !== contratoAtual.id)
+                            .map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  )}
+
+                  {!editIsFamilia && !editIsAmigo && (
+                    <p className="text-sm text-muted-foreground">
+                      O contrato atual não é de Família nem Amigo. Para alterar, use "Trocar plano" na lista de alunos.
+                    </p>
+                  )}
+                </>
               )}
             </TabsContent>
           )}

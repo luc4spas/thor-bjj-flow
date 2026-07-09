@@ -28,6 +28,8 @@ export const Route = createFileRoute("/app/alunos")({
 
 interface AlunoRow extends AlunoEditPayload {
   status_pagamento: "ok" | "atrasado" | "neutro";
+  dependentes: string[];
+  titularNome: string | null;
 }
 
 function Alunos() {
@@ -58,6 +60,18 @@ function Alunos() {
         .from("transacoes")
         .select("id_aluno,status,data_vencimento,tipo");
 
+      // mapa de titular -> lista de dependentes
+      const depMap = new Map<string, string[]>();
+      const nomeById = new Map<string, string>();
+      (alunosData ?? []).forEach((a) => nomeById.set(a.id, a.nome));
+      (alunosData ?? []).forEach((a) => {
+        if (a.titular_id) {
+          const arr = depMap.get(a.titular_id) ?? [];
+          arr.push(a.nome);
+          depMap.set(a.titular_id, arr);
+        }
+      });
+
       const today = new Date().toISOString().slice(0, 10);
       return (alunosData ?? []).map((a) => {
         const ts = (transData ?? []).filter((t) => t.id_aluno === a.id && t.tipo === "receita");
@@ -66,7 +80,9 @@ function Alunos() {
           const atrasado = ts.some((t) => t.status === "pendente" && t.data_vencimento < today);
           status = atrasado ? "atrasado" : "ok";
         }
-        return { ...a, status_pagamento: status };
+        const dependentes = depMap.get(a.id) ?? [];
+        const titularNome = a.titular_id ? nomeById.get(a.titular_id) ?? null : null;
+        return { ...a, status_pagamento: status, dependentes, titularNome };
       });
     },
   });
@@ -157,7 +173,27 @@ function Alunos() {
             {pag.pageItems.map((a) => (
               <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-4 py-3"><StatusDot status={a.status_pagamento} /></td>
-                <td className="px-4 py-3 font-medium">{a.nome}</td>
+                <td className="px-4 py-3 font-medium">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span>{a.nome}</span>
+                    {a.dependentes.length > 0 && (
+                      <span
+                        className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                        title={`Dependentes: ${a.dependentes.join(", ")}`}
+                      >
+                        Titular · {a.dependentes.length}
+                      </span>
+                    )}
+                    {a.titularNome && (
+                      <span
+                        className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                        title={`Titular: ${a.titularNome}`}
+                      >
+                        Dep. de {a.titularNome}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3">{a.faixa}</td>
                 <td className="px-4 py-3">{a.graus}</td>
                 <td className="px-4 py-3">{fmtDate(a.data_nascimento)}</td>

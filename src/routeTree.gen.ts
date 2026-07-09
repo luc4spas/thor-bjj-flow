@@ -16,10 +16,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppUsuariosRouteImport } from './routes/app.usuarios'
 import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
+import { Route as AppFrequenciaRouteImport } from './routes/app.frequencia'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
 import { Route as AppAlunosRouteImport } from './routes/app.alunos'
+import { Route as ApiPublicCatracaRouteImport } from './routes/api/public/catraca'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -56,6 +58,11 @@ const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFrequenciaRoute = AppFrequenciaRouteImport.update({
+  id: '/frequencia',
+  path: '/frequencia',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
@@ -76,6 +83,11 @@ const AppAlunosRoute = AppAlunosRouteImport.update({
   path: '/alunos',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicCatracaRoute = ApiPublicCatracaRouteImport.update({
+  id: '/api/public/catraca',
+  path: '/api/public/catraca',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -86,9 +98,11 @@ export interface FileRoutesByFullPath {
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/frequencia': typeof AppFrequenciaRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/usuarios': typeof AppUsuariosRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/catraca': typeof ApiPublicCatracaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -98,9 +112,11 @@ export interface FileRoutesByTo {
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/frequencia': typeof AppFrequenciaRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/usuarios': typeof AppUsuariosRoute
   '/app': typeof AppIndexRoute
+  '/api/public/catraca': typeof ApiPublicCatracaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -112,9 +128,11 @@ export interface FileRoutesById {
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/frequencia': typeof AppFrequenciaRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/usuarios': typeof AppUsuariosRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/catraca': typeof ApiPublicCatracaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,9 +145,11 @@ export interface FileRouteTypes {
     | '/app/configuracoes'
     | '/app/dashboard'
     | '/app/financeiro'
+    | '/app/frequencia'
     | '/app/relatorios'
     | '/app/usuarios'
     | '/app/'
+    | '/api/public/catraca'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -139,9 +159,11 @@ export interface FileRouteTypes {
     | '/app/configuracoes'
     | '/app/dashboard'
     | '/app/financeiro'
+    | '/app/frequencia'
     | '/app/relatorios'
     | '/app/usuarios'
     | '/app'
+    | '/api/public/catraca'
   id:
     | '__root__'
     | '/'
@@ -152,9 +174,11 @@ export interface FileRouteTypes {
     | '/app/configuracoes'
     | '/app/dashboard'
     | '/app/financeiro'
+    | '/app/frequencia'
     | '/app/relatorios'
     | '/app/usuarios'
     | '/app/'
+    | '/api/public/catraca'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -162,6 +186,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicCatracaRoute: typeof ApiPublicCatracaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -215,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRelatoriosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/frequencia': {
+      id: '/app/frequencia'
+      path: '/frequencia'
+      fullPath: '/app/frequencia'
+      preLoaderRoute: typeof AppFrequenciaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/financeiro': {
       id: '/app/financeiro'
       path: '/financeiro'
@@ -243,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAlunosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/catraca': {
+      id: '/api/public/catraca'
+      path: '/api/public/catraca'
+      fullPath: '/api/public/catraca'
+      preLoaderRoute: typeof ApiPublicCatracaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -251,6 +290,7 @@ interface AppRouteChildren {
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
+  AppFrequenciaRoute: typeof AppFrequenciaRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -261,6 +301,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
+  AppFrequenciaRoute: AppFrequenciaRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppIndexRoute: AppIndexRoute,
@@ -273,7 +314,18 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicCatracaRoute: ApiPublicCatracaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
