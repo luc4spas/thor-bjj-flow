@@ -153,6 +153,24 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
   const isAmigo = planoSelecionado?.tipo === "amigo";
   const isAvista = planoSelecionado?.cobranca === "a_vista";
 
+  // Contrato ativo do aluno em edição (para permitir vincular a família/amigo)
+  const { data: contratoAtual } = useQuery({
+    queryKey: ["contrato-atual", aluno?.id],
+    enabled: !!aluno?.id && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id, titular_contrato_id, id_plano, plano:planos!inner(tipo,nome)")
+        .eq("id_aluno", aluno!.id)
+        .eq("status", "ativo")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const editIsFamilia = (contratoAtual?.plano as { tipo?: string } | undefined)?.tipo === "familia";
+  const editIsAmigo = (contratoAtual?.plano as { tipo?: string } | undefined)?.tipo === "amigo";
+
 
   useEffect(() => {
     if (!open) return;
