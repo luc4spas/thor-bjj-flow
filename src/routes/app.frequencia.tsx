@@ -90,13 +90,13 @@ function Frequencia() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold">Frequência</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Frequência</h1>
         <p className="text-sm text-muted-foreground">
           Check-ins manuais e registros vindos da catraca
         </p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         <StatCard label="Hoje" value={totalHoje} />
         <StatCard label="No período" value={totalPeriodo} />
         <StatCard label="Alunos ativos" value={alunos?.length ?? 0} />
@@ -128,7 +128,7 @@ function Frequencia() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         <div className="space-y-1.5">
           <Label className="text-xs">De</Label>
           <Input type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />

@@ -161,7 +161,7 @@ function Financeiro() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Financeiro</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">Financeiro</h1>
           <p className="text-sm text-muted-foreground">Contas a Receber e a Pagar</p>
         </div>
         <Button onClick={() => { setEditing(null); setOpenForm(true); }}>

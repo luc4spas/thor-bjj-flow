@@ -41,11 +41,11 @@ function Relatorios() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold">Relatórios</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Relatórios</h1>
         <p className="text-sm text-muted-foreground">Visão consolidada</p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         <Kpi title="Total Recebido" value={fmtBRL(totalRecebido)} />
         <Kpi title="Total Pago (Despesas)" value={fmtBRL(totalDespesas)} />
         <Kpi title="Saldo" value={fmtBRL(saldo)} />
