@@ -41,6 +41,7 @@ function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) return toast.error(error.message);
+    if (typeof window !== "undefined") sessionStorage.removeItem("thor-recovery");
     toast.success("Senha atualizada. Faça login com a nova senha.");
     await supabase.auth.signOut();
     navigate({ to: "/login" });

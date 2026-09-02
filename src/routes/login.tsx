@@ -20,7 +20,10 @@ function LoginPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (user) navigate({ to: "/app/dashboard" }); }, [user, navigate]);
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("thor-recovery") === "1") return;
+    if (user) navigate({ to: "/app/dashboard" });
+  }, [user, navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
