@@ -102,7 +102,7 @@ export function TrocarPlanoDialog({ open, onOpenChange, onSaved, alunoId, alunoN
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] max-w-lg">
         <DialogHeader>
           <DialogTitle>Trocar Plano{alunoNome ? ` — ${alunoNome}` : ""}</DialogTitle>
         </DialogHeader>

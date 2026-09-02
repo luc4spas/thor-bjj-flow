@@ -41,14 +41,15 @@ function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) return toast.error(error.message);
+    if (typeof window !== "undefined") sessionStorage.removeItem("thor-recovery");
     toast.success("Senha atualizada. Faça login com a nova senha.");
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   }
 
   return (
-    <div className="grid min-h-screen place-items-center thor-gradient p-6">
-      <div className="w-full max-w-md rounded-2xl border bg-card/60 p-8 shadow-2xl backdrop-blur">
+    <div className="grid min-h-screen place-items-center thor-gradient p-4 sm:p-6">
+      <div className="w-full max-w-md rounded-2xl border bg-card/60 p-6 sm:p-8 shadow-2xl backdrop-blur">
         <div className="mb-6 flex items-center gap-3">
           <img src={logo} alt="Thor BJJ" className="h-10 w-10 rounded-full ring-2 ring-primary/40" />
           <span className="font-bold tracking-wide">THOR BJJ <span className="text-primary">ERP</span></span>

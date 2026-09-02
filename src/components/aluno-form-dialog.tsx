@@ -324,13 +324,13 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar Aluno" : "Novo Aluno"}</DialogTitle>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 gap-1 sm:grid-cols-4">
             <TabsTrigger value="dados">Dados</TabsTrigger>
             <TabsTrigger value="endereco">Endereço *</TabsTrigger>
             <TabsTrigger value="resp">Responsável</TabsTrigger>
@@ -340,15 +340,15 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
 
           <TabsContent value="dados" className="space-y-4 pt-4">
             <Field label="Nome *"><Input value={nome} onChange={(e) => setNome(e.target.value)} /></Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Data de Nascimento"><Input type="date" value={dataNasc} onChange={(e) => setDataNasc(e.target.value)} /></Field>
               <Field label="Telefone"><Input value={telefone} onChange={(e) => setTelefone(e.target.value)} /></Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="E-mail"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
               <Field label="CPF"><Input value={cpf} onChange={(e) => setCpf(maskCPF(e.target.value))} placeholder="000.000.000-00" inputMode="numeric" /></Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Faixa">
                 <Select value={faixa} onValueChange={setFaixa}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -371,7 +371,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
               <Field label="Rua / Logradouro"><Input value={rua} onChange={(e) => setRua(e.target.value)} /></Field>
               <Field label="Número"><Input value={numero} onChange={(e) => setNumero(e.target.value)} /></Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Bairro"><Input value={bairro} onChange={(e) => setBairro(e.target.value)} /></Field>
               <Field label="CEP"><Input value={cep} onChange={(e) => setCep(maskCEP(e.target.value))} placeholder="00000-000" inputMode="numeric" /></Field>
             </div>
@@ -389,7 +389,7 @@ export function AlunoFormDialog({ open, onOpenChange, onSaved, aluno }: Props) {
           <TabsContent value="resp" className="space-y-4 pt-4">
             <p className="text-xs text-muted-foreground">Opcional para alunos maiores de idade</p>
             <Field label="Nome"><Input value={respNome} onChange={(e) => setRespNome(e.target.value)} /></Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="CPF"><Input value={respCpf} onChange={(e) => setRespCpf(e.target.value)} /></Field>
               <Field label="Telefone"><Input value={respTel} onChange={(e) => setRespTel(e.target.value)} /></Field>
             </div>

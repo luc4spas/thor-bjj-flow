@@ -1,8 +1,10 @@
 import { createFileRoute, Outlet, Navigate, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth, type AppRole } from "@/lib/auth-context";
-import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut, ShieldCheck, CalendarCheck } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut, ShieldCheck, CalendarCheck, Menu } from "lucide-react";
 import logo from "@/assets/thor-logo.jpg";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useState } from "react";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -28,6 +30,7 @@ const NAV: NavItem[] = [
 function AppLayout() {
   const { user, role, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Carregando…</div>;
@@ -84,8 +87,48 @@ function AppLayout() {
 
       <main className="flex-1 overflow-x-hidden">
         {/* Mobile bar */}
-        <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:hidden">
+        <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-card px-3 py-3 lg:hidden">
           <div className="flex items-center gap-2">
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Abrir menu">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[80vw] max-w-xs bg-sidebar p-4">
+                <div className="flex items-center gap-3 py-2">
+                  <img src={logo} alt="Thor BJJ" className="h-9 w-9 rounded-full ring-2 ring-primary/40" />
+                  <div>
+                    <p className="text-sm font-bold leading-tight">THOR BJJ</p>
+                    <p className="text-xs text-muted-foreground">Cabo Frio · RJ</p>
+                  </div>
+                </div>
+                <nav className="mt-4 flex flex-col gap-1">
+                  {items.map((item) => {
+                    const active = pathname.startsWith(item.to);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setMenuOpen(false)}
+                        className={[
+                          "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
+                          active ? "bg-primary/15 font-medium text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent",
+                        ].join(" ")}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+                <div className="mt-6 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-3">
+                  <p className="truncate text-xs font-medium">{user.email}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{role}</p>
+                </div>
+              </SheetContent>
+            </Sheet>
             <img src={logo} alt="Thor BJJ" className="h-8 w-8 rounded-full" />
             <span className="text-sm font-bold">THOR BJJ ERP</span>
           </div>
@@ -93,7 +136,7 @@ function AppLayout() {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           <Outlet />
         </div>
       </main>

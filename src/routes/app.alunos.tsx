@@ -116,7 +116,7 @@ function Alunos() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Alunos</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">Alunos</h1>
           <p className="text-sm text-muted-foreground">Cadastro e acompanhamento dos atletas</p>
         </div>
         {canManage && (
@@ -126,7 +126,7 @@ function Alunos() {
         )}
       </header>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         <div className="relative md:col-span-2">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Buscar por nome…"
@@ -151,7 +151,8 @@ function Alunos() {
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-card">
-        <table className="w-full text-sm">
+        <div className="w-full overflow-x-auto">
+        <table className="w-full min-w-[760px] text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Status</th>
@@ -223,7 +224,7 @@ function Alunos() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
         <PaginationBar
           page={pag.page} totalPages={pag.totalPages} total={pag.total}
           from={pag.from} to={pag.to} pageSize={pageSize}

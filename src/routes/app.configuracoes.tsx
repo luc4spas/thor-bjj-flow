@@ -90,7 +90,7 @@ function Config() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold">Configurações</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Configurações</h1>
         <p className="text-sm text-muted-foreground">Planos da academia</p>
       </header>
 
@@ -111,7 +111,8 @@ function Config() {
           </div>
 
           <div className="overflow-hidden rounded-md border">
-            <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr><th className="px-3 py-2">Nome</th><th className="px-3 py-2">Duração</th><th className="px-3 py-2">Valor</th><th className="px-3 py-2 w-28"></th></tr>
               </thead>
@@ -149,7 +150,7 @@ function Config() {
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
             <PaginationBar
               page={pag.page} totalPages={pag.totalPages} total={pag.total}
               from={pag.from} to={pag.to} pageSize={pageSize}

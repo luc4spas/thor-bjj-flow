@@ -134,14 +134,14 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold">Dashboard Geral</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Dashboard Geral</h1>
         <p className="text-sm text-muted-foreground">Visão geral da academia</p>
       </header>
 
       {/* Alunos */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Alunos</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <KpiCard title="Total de Alunos" value={String(totalAlunos)} icon={<Users className="h-5 w-5" />} tone="info" />
           <KpiCard title="Alunos Ativos" value={String(ativos)} icon={<UserCheck className="h-5 w-5" />} tone="success" />
           <KpiCard title="Alunos Inativos" value={String(inativos)} icon={<UserX className="h-5 w-5" />} tone="danger" />
@@ -152,7 +152,7 @@ function Dashboard() {
       {/* Financeiro */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Financeiro</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <KpiCard title="Receita Prevista (mês)" value={fmtBRL(receitaPrevista)} icon={<TrendingUp className="h-5 w-5" />} tone="success" />
           <KpiCard title="Recebido no Mês" value={fmtBRL(receitaRecebida)} icon={<Receipt className="h-5 w-5" />} tone="info" />
           <KpiCard title="Inadimplência" value={fmtBRL(inadimplencia)} icon={<AlertTriangle className="h-5 w-5" />} tone="danger" />

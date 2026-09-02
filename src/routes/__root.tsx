@@ -6,6 +6,27 @@ import {
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
+import { useEffect } from "react";
+
+/** Se o link de recuperação de senha cair em qualquer rota, leva para /reset-password. */
+function RecoveryRedirect() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    const isRecovery =
+      hash.includes("type=recovery") ||
+      search.includes("type=recovery") ||
+      new URLSearchParams(search).get("code") !== null && sessionStorage.getItem("thor-recovery") === "1";
+    if (hash.includes("type=recovery") || search.includes("type=recovery")) {
+      sessionStorage.setItem("thor-recovery", "1");
+    }
+    if (isRecovery && !window.location.pathname.startsWith("/reset-password")) {
+      window.location.replace(`/reset-password${hash}${hash ? "" : search}`);
+    }
+  }, []);
+  return null;
+}
 
 function NotFound() {
   return (
@@ -76,6 +97,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <RecoveryRedirect />
         <Outlet />
         <Toaster richColors position="top-right" />
       </AuthProvider>

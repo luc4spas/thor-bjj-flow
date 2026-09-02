@@ -161,7 +161,7 @@ function Financeiro() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Financeiro</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">Financeiro</h1>
           <p className="text-sm text-muted-foreground">Contas a Receber e a Pagar</p>
         </div>
         <Button onClick={() => { setEditing(null); setOpenForm(true); }}>
@@ -213,7 +213,7 @@ function Financeiro() {
                 </Button>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
               <div className="space-y-1">
                 <Label className="text-xs">Vencimento de</Label>
                 <Input type="date" value={dtIni} onChange={(e) => { setDtIni(e.target.value); setPage(1); }} />
@@ -231,7 +231,8 @@ function Financeiro() {
           </div>
 
           <div className="overflow-hidden rounded-lg border bg-card">
-            <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Vencimento</th>
@@ -298,7 +299,7 @@ function Financeiro() {
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
             <PaginationBar
               page={pag.page} totalPages={pag.totalPages} total={pag.total}
               from={pag.from} to={pag.to} pageSize={pageSize}
@@ -522,12 +523,12 @@ function TransacaoDialog({
             <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5"><Label className="text-xs">Valor</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} /></div>
             <div className="space-y-1.5"><Label className="text-xs">Vencimento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as "pendente" | "pago")}>

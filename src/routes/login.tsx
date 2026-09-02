@@ -20,7 +20,10 @@ function LoginPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (user) navigate({ to: "/app/dashboard" }); }, [user, navigate]);
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("thor-recovery") === "1") return;
+    if (user) navigate({ to: "/app/dashboard" });
+  }, [user, navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,14 +43,14 @@ function LoginPage() {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 thor-gradient">
       {/* HERO */}
-      <section className="relative flex flex-col justify-between p-10 lg:p-16">
+      <section className="relative flex flex-col justify-between p-6 sm:p-10 lg:p-16">
         <div className="flex items-center gap-3">
           <img src={logo} alt="Thor BJJ" className="h-12 w-12 rounded-full ring-2 ring-primary/40" />
           <span className="text-lg font-bold tracking-wide">THOR BJJ <span className="text-primary">ERP</span></span>
         </div>
 
         <div className="mt-10 max-w-xl">
-          <h1 className="text-4xl font-extrabold leading-tight lg:text-6xl">
+          <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl lg:text-6xl">
             Thor BJJ:<br />
             <span className="text-primary">Forjando Campeões</span><br />
             desde 2003
@@ -74,8 +77,8 @@ function LoginPage() {
       </section>
 
       {/* FORM */}
-      <section className="flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md rounded-2xl border bg-card/60 p-8 shadow-2xl backdrop-blur">
+      <section className="flex items-center justify-center p-4 sm:p-6 lg:p-12">
+        <div className="w-full max-w-md rounded-2xl border bg-card/60 p-6 sm:p-8 shadow-2xl backdrop-blur">
           <h2 className="text-2xl font-bold">Entrar no sistema</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Acesse com suas credenciais para continuar
