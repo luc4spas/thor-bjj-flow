@@ -1,8 +1,10 @@
 import { createFileRoute, Outlet, Navigate, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth, type AppRole } from "@/lib/auth-context";
-import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut, ShieldCheck, CalendarCheck } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, BarChart3, Settings, LogOut, ShieldCheck, CalendarCheck, Menu } from "lucide-react";
 import logo from "@/assets/thor-logo.jpg";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useState } from "react";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -28,6 +30,7 @@ const NAV: NavItem[] = [
 function AppLayout() {
   const { user, role, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Carregando…</div>;
