@@ -231,7 +231,8 @@ function Financeiro() {
           </div>
 
           <div className="overflow-hidden rounded-lg border bg-card">
-            <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Vencimento</th>
@@ -298,7 +299,7 @@ function Financeiro() {
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
             <PaginationBar
               page={pag.page} totalPages={pag.totalPages} total={pag.total}
               from={pag.from} to={pag.to} pageSize={pageSize}
